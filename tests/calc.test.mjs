@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   scaleNutrients, kjToKcal, kcalToKj, sodiumToSalt, recipePer100, recipePerPortion,
-  isValidBarcode, gtinCheckDigit, expandUpcE, pickDisplayName, per100FromOff, parseDecimal, productFromOff,
+  isValidBarcode, gtinCheckDigit, expandUpcE, pickDisplayName, per100FromOff, parseDecimal, productFromOff, goalsMet,
 } from '../js/nutrition.js';
 import { normalize, searchEntries } from '../js/text.js';
 
@@ -92,6 +92,17 @@ test('Namenspriorität Deutsch → Englisch → Original → Finnisch → Schwed
   assert.deepEqual(pickDisplayName({ fi: 'Ruisleipä', sv: 'Rågbröd' }), { name: 'Ruisleipä', original: '' });
   assert.deepEqual(pickDisplayName({ sv: 'Rågbröd' }), { name: 'Rågbröd', original: '' });
   assert.deepEqual(pickDisplayName({ de: 'Nutella', orig: 'Nutella' }), { name: 'Nutella', original: '' });
+});
+
+test('Tagesziel: erreicht oder mehr, alle gesetzten Ziele', () => {
+  const goals = { kcal: 2000, protein: 120, carbs: null, fat: null };
+  assert.equal(goalsMet({ kcal: 2000, protein: 120 }, goals), true);
+  assert.equal(goalsMet({ kcal: 2500, protein: 150 }, goals), true);
+  assert.equal(goalsMet({ kcal: 1999, protein: 150 }, goals), false);
+  assert.equal(goalsMet({ kcal: 2100, protein: 100 }, goals), false);
+  assert.equal(goalsMet({ kcal: 2100, protein: null }, goals), false, 'unbekannt zählt als nicht erreicht');
+  assert.equal(goalsMet({ kcal: 2100, protein: 100 }, goals, ['kcal']), true, 'nur Kalorien');
+  assert.equal(goalsMet({ kcal: 3000 }, { kcal: null }), null, 'kein Ziel gesetzt');
 });
 
 test('Dezimalzahlen mit Komma oder Punkt', () => {

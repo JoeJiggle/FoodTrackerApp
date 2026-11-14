@@ -4,6 +4,7 @@ import * as db from './db.js';
 const DEFAULTS = {
   goals: { kcal: null, protein: null, carbs: null, fat: null },
   showMacros: true,
+  showMonth: true, // Monatsübersicht auf „Heute“ aufgeklappt
   datasets: { de: true, ch: true, fi: true },
   lastBackup: null, // ISO-Zeitstempel
   backupReminderSnoozed: null,

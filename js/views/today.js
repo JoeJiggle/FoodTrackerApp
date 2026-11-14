@@ -1,9 +1,10 @@
-// Startbildschirm: Tagessummen, Mahlzeiten, Tageswechsel.
+// Startbildschirm: Tagessummen, Monatsübersicht, Mahlzeiten, Tageswechsel.
 import { h, icon, actionSheet, toast, confirmAction } from '../ui.js';
 import { state, refreshView } from '../state.js';
 import { settings, setSetting } from '../settings.js';
-import { fmtKcal, fmtMacro, fmtAmount, fmtDateLong, addDays, todayISO } from '../format.js';
-import { MEALS, mealForNow, entriesForDate, entryNutrients, totalsOf, copyMeal, deleteEntry, mealLabel } from '../log.js';
+import { fmtKcal, fmtMacro, fmtAmount, fmtDateLong, addDays, todayISO, parseISO } from '../format.js';
+import { goalsMet } from '../nutrition.js';
+import { MEALS, mealForNow, entriesForDate, entriesInRange, entryNutrients, totalsOf, copyMeal, deleteEntry, mealLabel } from '../log.js';
 import { getFood } from '../foods.js';
 import { openFoodDetail, openFoodPicker, openStoredList } from './add.js';
 import { openScanner } from './scan.js';
@@ -18,7 +19,7 @@ export async function renderToday(root) {
   const entries = await entriesForDate(state.date);
   const totals = totalsOf(entries);
 
-  root.append(...[dayNav(), backupReminder(), summaryCard(totals, s)].filter(Boolean));
+  root.append(...[dayNav(), backupReminder(), summaryCard(totals, s), await monthCard(s)].filter(Boolean));
   for (const meal of MEALS) root.append(mealCard(meal, entries.filter((e) => e.meal === meal.id), s));
 }
 
@@ -79,6 +80,90 @@ function summaryCard(t, s) {
       macro('c', 'Kohlenhydr.', t.carbs, g.carbs),
       macro('f', 'Fett', t.fat, g.fat),
     ),
+  );
+}
+
+// ---------- Monatsübersicht ----------
+
+let calMonth = null; // angezeigter Monat 'JJJJ-MM'
+let calSyncedFor = null; // Tag, zu dem calMonth zuletzt passend gesetzt wurde
+
+const pad = (n) => String(n).padStart(2, '0');
+
+function shiftMonth(ym, dir) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 1 + dir, 1);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+}
+
+/** Kalender des Monats: Tage mit erreichtem Tagesziel grün, erfasste Tage mit Punkt. Antippen öffnet den Tag. */
+async function monthCard(s) {
+  // Wechselt der angezeigte Tag in einen anderen Monat, springt der Kalender mit.
+  if (calSyncedFor !== state.date) {
+    calMonth = state.date.slice(0, 7);
+    calSyncedFor = state.date;
+  }
+  const [y, m] = calMonth.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const today = todayISO();
+  const thisMonth = today.slice(0, 7);
+  // „Nur Kalorien“: dann zählt nur das Kalorienziel
+  const goalKeys = s.showMacros ? ['kcal', 'protein', 'carbs', 'fat'] : ['kcal'];
+  const hasGoal = goalsMet({}, s.goals, goalKeys) !== null;
+
+  const entries = await entriesInRange(`${calMonth}-01`, `${calMonth}-${pad(daysInMonth)}`);
+  const byDate = {};
+  for (const e of entries) (byDate[e.date] ??= []).push(e);
+
+  let met = 0;
+  let logged = 0;
+  const cells = [];
+  const lead = (new Date(y, m - 1, 1).getDay() + 6) % 7; // Montag zuerst
+  for (let i = 0; i < lead; i++) cells.push(h('span'));
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${calMonth}-${pad(d)}`;
+    const list = byDate[iso];
+    const future = iso > today;
+    let status = '';
+    let label = 'nichts erfasst';
+    if (list?.length) {
+      logged++;
+      if (goalsMet(totalsOf(list), s.goals, goalKeys)) { status = 'met'; label = 'Tagesziel erreicht'; met++; }
+      else { status = 'logged'; label = hasGoal ? 'erfasst, Ziel nicht erreicht' : 'erfasst'; }
+    }
+    cells.push(h('button', {
+      class: `cal-day ${status} ${future ? 'future' : ''} ${iso === today ? 'today' : ''} ${iso === state.date ? 'selected' : ''}`,
+      disabled: future,
+      'aria-label': `${parseISO(iso).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}: ${label}`,
+      'aria-current': iso === state.date ? 'date' : null,
+      onclick: () => { state.date = iso; refreshView(); },
+    }, d));
+  }
+
+  const open = s.showMonth;
+  const monthName = new Date(y, m - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+  const summary = hasGoal
+    ? `${met} ${met === 1 ? 'Tag' : 'Tage'} Ziel erreicht`
+    : `${logged} ${logged === 1 ? 'Tag' : 'Tage'} erfasst`;
+
+  return h('section', { class: 'card month', 'aria-label': 'Monatsübersicht' },
+    h('div', { class: 'card-head' },
+      h('button', { class: 'month-toggle', 'aria-expanded': String(open), onclick: async () => { await setSetting('showMonth', !open); refreshView(); } },
+        h('h3', null, monthName), icon(open ? 'up' : 'down'), !open && h('span', { class: 'muted small' }, summary)),
+      open && h('div', { class: 'row', style: { gap: '0' } },
+        h('button', { class: 'btn-icon', 'aria-label': 'Vorheriger Monat', onclick: () => { calMonth = shiftMonth(calMonth, -1); refreshView(); } }, icon('left')),
+        h('button', { class: 'btn-icon', 'aria-label': 'Nächster Monat', disabled: calMonth >= thisMonth, onclick: () => { calMonth = shiftMonth(calMonth, 1); refreshView(); } }, icon('right')),
+      ),
+    ),
+    open && h('div', { class: 'cal-grid', role: 'group', 'aria-label': monthName },
+      ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((w) => h('span', { class: 'cal-wd', 'aria-hidden': 'true' }, w)),
+      cells,
+    ),
+    open && (hasGoal
+      ? h('div', { class: 'cal-legend' },
+        h('span', null, h('i', { class: 'dot met' }), `Ziel erreicht: ${met}`),
+        h('span', null, h('i', { class: 'dot logged' }), `nicht erreicht: ${logged - met}`))
+      : h('p', { class: 'muted small', style: { margin: '8px 0 0' } }, 'Setze unter ', h('a', { href: '#einstellungen' }, 'Mehr → Tagesziele'), ' ein Ziel, dann werden Tage mit erreichtem Ziel grün markiert.')),
   );
 }
 

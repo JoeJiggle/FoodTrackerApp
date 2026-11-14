@@ -91,6 +91,16 @@ export function recipePerPortion(ingredients, portions) {
   return out;
 }
 
+/**
+ * Tagesziel erreicht, wenn jedes gesetzte Ziel (kcal und ggf. Makros) erreicht oder überschritten ist.
+ * keys: welche Ziele zählen. Ergebnis null, wenn keines davon gesetzt ist.
+ */
+export function goalsMet(totals, goals, keys = ['kcal', 'protein', 'carbs', 'fat']) {
+  const set = keys.filter((k) => goals?.[k] > 0);
+  if (!set.length) return null;
+  return set.every((k) => (totals?.[k] ?? 0) >= goals[k]);
+}
+
 // ---------- Barcodes ----------
 
 /** Prüfziffer nach GTIN-Verfahren (EAN-8, EAN-13, UPC-A, GTIN-14) für alle Ziffern außer der letzten. */
