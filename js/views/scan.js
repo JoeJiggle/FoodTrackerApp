@@ -34,23 +34,65 @@ export function openScanner(ctx) {
   let screen;
   let msg;
   let wrap;
+  let watchdog = null;
 
-  async function startCamera() {
-    msg.textContent = 'Kamera wird gestartet …';
+  const restartButton = () => h('button', { class: 'btn', style: { marginTop: '8px' }, onclick: (e) => { e.stopPropagation(); startCamera(true); } }, 'Kamera neu starten');
+
+  /** Video abspielen; blockiert iOS das automatische Abspielen, startet ein Tippen aufs Bild es. */
+  async function playVideo(m) {
     try {
-      const m = await loadScanner();
-      const stream = await m.getCameraStream();
+      await video.play();
+    } catch (e) {
+      console.warn('video.play()', e);
+      msg.replaceChildren('Zum Starten der Kamera aufs Bild tippen');
+      wrap.onclick = async () => {
+        wrap.onclick = null;
+        try { await video.play(); startLoop(m); } catch { showProblem(m); }
+      };
+      return false;
+    }
+    return true;
+  }
+
+  function startLoop(m) {
+    msg.replaceChildren('Barcode in den Rahmen halten');
+    if (!running) { running = true; loop(m); }
+    // Kommt nach 3 Sekunden noch kein Bild, Hilfe und Diagnose anzeigen
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => {
+      if (screen.el.isConnected && running && (!video.videoWidth || video.paused)) showProblem(m);
+    }, 3000);
+  }
+
+  function showProblem(m) {
+    msg.replaceChildren(
+      h('div', null, 'Kein Kamerabild? Neu starten – oder „Foto aufnehmen“ verwenden.'),
+      restartButton(),
+      h('small', { style: { display: 'block', marginTop: '8px', opacity: '.7', fontSize: '11px' } }, m.cameraInfo(video)),
+    );
+  }
+
+  async function startCamera(fresh = false) {
+    stopLoop();
+    msg.replaceChildren('Kamera wird gestartet …');
+    let m;
+    try {
+      m = await loadScanner();
+      const stream = await m.getCameraStream({ fresh });
       if (!screen.el.isConnected) return m.pauseCamera();
-      if (video.srcObject !== stream) video.srcObject = stream;
-      await video.play().catch(() => {});
-      msg.textContent = 'Barcode in den Rahmen halten';
-      running = true;
-      loop(m);
+      if (video.srcObject !== stream) {
+        video.srcObject = null;
+        video.srcObject = stream;
+      }
+      if (await playVideo(m)) startLoop(m);
     } catch (e) {
       console.warn(e);
-      msg.textContent = e?.name === 'NotAllowedError'
-        ? 'Kein Kamerazugriff. Du kannst „Foto aufnehmen“ verwenden oder die Nummer eintippen.'
-        : 'Die Kamera ist nicht verfügbar. Nutze „Foto aufnehmen“ oder tippe die Nummer ein.';
+      msg.replaceChildren(
+        e?.name === 'NotAllowedError'
+          ? 'Kein Kamerazugriff. Du kannst „Foto aufnehmen“ verwenden oder die Nummer eintippen.'
+          : `Die Kamera ist nicht verfügbar (${e?.name || 'Fehler'}). Nutze „Foto aufnehmen“ oder tippe die Nummer ein.`,
+        restartButton(),
+      );
     }
   }
 
@@ -82,14 +124,18 @@ export function openScanner(ctx) {
     className: 'scanner',
     onClose: () => {
       stopLoop();
+      clearTimeout(watchdog);
       document.removeEventListener('visibilitychange', onVisibility);
       video.pause();
       scannerModule?.then((m) => m.pauseCamera());
     },
     render(body) {
-      video = h('video', { playsinline: true, muted: true, autoplay: true, 'aria-label': 'Kamerabild' });
-      video.setAttribute('playsinline', '');
+      // iOS spielt Kamerabilder nur inline und stumm automatisch ab – Attribute vor srcObject setzen.
+      video = document.createElement('video');
+      for (const a of ['playsinline', 'webkit-playsinline', 'muted', 'autoplay']) video.setAttribute(a, '');
       video.muted = true;
+      video.playsInline = true;
+      video.setAttribute('aria-label', 'Kamerabild');
       msg = h('div', { class: 'msg' });
       wrap = h('div', { class: 'video-wrap' }, video, h('div', { class: 'frame' }), msg);
       const photo = h('input', { type: 'file', accept: 'image/*', capture: 'environment', 'aria-label': 'Foto aufnehmen' });

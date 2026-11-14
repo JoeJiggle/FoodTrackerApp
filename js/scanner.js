@@ -11,28 +11,56 @@ const LIVE_OPTIONS = { formats: FORMATS, tryHarder: true, tryRotate: false, tryI
 const PHOTO_OPTIONS = { formats: FORMATS, tryHarder: true, tryRotate: true, tryInvert: true, tryDownscale: true, maxNumberOfSymbols: 1 };
 
 // ---------- Kamera ----------
-// Der Stream bleibt während der Sitzung bestehen und wird nur pausiert,
-// damit iOS nicht bei jedem Scan erneut nach der Berechtigung fragt.
+// Der Stream bleibt nach dem Schließen des Scanners eine Weile bestehen und wird beim nächsten Scan
+// wiederverwendet, damit iOS nicht bei jedem Scan erneut nach der Berechtigung fragt.
+// (Die Spur wird dabei bewusst nicht per track.enabled aus- und eingeschaltet: Danach bleibt das
+// Kamerabild auf iOS teilweise schwarz.) Nach längerer Nichtbenutzung wird die Kamera freigegeben.
 
+const RELEASE_AFTER_MS = 3 * 60 * 1000;
 let stream = null;
+let releaseTimer = null;
 
-const isLive = () => stream?.getVideoTracks().some((t) => t.readyState === 'live');
+const isLive = () => stream?.getVideoTracks().some((t) => t.readyState === 'live' && !t.muted);
 
-export async function getCameraStream() {
-  if (isLive()) {
-    for (const t of stream.getVideoTracks()) t.enabled = true;
-    return stream;
-  }
+function stopStream() {
+  for (const t of stream?.getTracks() ?? []) t.stop();
+  stream = null;
+}
+
+/** fresh = true erzwingt einen neuen Stream (z. B. nach „Kamera neu starten“). */
+export async function getCameraStream({ fresh = false } = {}) {
+  clearTimeout(releaseTimer);
+  if (fresh) stopStream();
+  if (isLive()) return stream;
+  stopStream();
   if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error('Kamera wird nicht unterstützt'), { name: 'NotSupportedError' });
-  stream = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-  });
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+  } catch (e) {
+    if (e.name !== 'OverconstrainedError') throw e;
+    stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+  }
   return stream;
 }
 
+/** Scanner geschlossen oder App im Hintergrund: Kamera später freigeben, falls sie nicht wieder gebraucht wird. */
 export function pauseCamera() {
-  for (const t of stream?.getVideoTracks() ?? []) t.enabled = false;
+  clearTimeout(releaseTimer);
+  releaseTimer = setTimeout(stopStream, RELEASE_AFTER_MS);
+}
+
+/** Kurzinfo zum Kamerazustand für die Fehlersuche. */
+export function cameraInfo(video) {
+  const t = stream?.getVideoTracks()[0];
+  const s = t?.getSettings?.() ?? {};
+  return [
+    t ? `Spur ${t.readyState}${t.muted ? ', stumm' : ''}${t.enabled ? '' : ', aus'}` : 'keine Spur',
+    s.width ? `Kamera ${s.width}×${s.height}` : '',
+    `Video ${video.videoWidth}×${video.videoHeight}, ${video.paused ? 'pausiert' : 'läuft'}, Status ${video.readyState}`,
+  ].filter(Boolean).join(' · ');
 }
 
 // ---------- Erkennung ----------
