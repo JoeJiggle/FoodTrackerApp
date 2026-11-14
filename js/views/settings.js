@@ -147,10 +147,10 @@ async function aboutCard() {
     h('p', { class: 'small' }, h('b', null, 'Open Food Facts'), ' – Produktdaten von ', link('https://world.openfoodfacts.org'), ', verfügbar unter der ',
       link('https://opendatacommons.org/licenses/odbl/1-0/', 'Open Database License (ODbL)'), '. Einzelne Inhalte unter der Database Contents License, Bilder unter CC BY-SA.'),
     h('p', { class: 'small' }, h('b', null, 'Schweizer Nährwertdatenbank'), ' – Bundesamt für Lebensmittelsicherheit und Veterinärwesen BLV, ',
-      link('https://naehrwertdaten.ch'), '. Freie Nutzung, Quellenangabe Pflicht (', link('https://opendata.swiss/de/dataset/naehrwerte_lebensmittel', 'opendata.swiss'), ').'),
-    h('p', { class: 'small' }, h('b', null, 'Fineli'), ' – ', FINELI_ATTRIBUTION, ' ', link('https://fineli.fi')),
+      link('https://naehrwertdaten.ch'), '. Freie Nutzung, Quellenangabe Pflicht (', link('https://opendata.swiss/de/dataset/naehrwerte_lebensmittel', 'opendata.swiss'), '). Für die App umgewandelt (Auswahl der Nährstoffe).'),
+    h('p', { class: 'small' }, h('b', null, 'Fineli'), ' – ', FINELI_ATTRIBUTION, ' ', link('https://fineli.fi'), ' · ', link('https://creativecommons.org/licenses/by/4.0/deed.de', 'Lizenztext')),
     h('p', { class: 'small muted' }, 'Barcode-Erkennung: zxing-wasm (MIT-Lizenz).'),
   );
 }
 
-const FINELI_ATTRIBUTION = 'Finnische Nährwertdatenbank des Instituts für Gesundheit und Wohlfahrt (THL).';
+const FINELI_ATTRIBUTION = 'Finnische Nährwertdatenbank, Terveyden ja hyvinvoinnin laitos (THL), lizenziert unter CC BY 4.0. Für die App umgewandelt (Auswahl der Nährstoffe, Einheiten umgerechnet).';

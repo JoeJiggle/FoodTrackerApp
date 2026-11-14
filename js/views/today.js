@@ -67,8 +67,8 @@ function summaryCard(t, s) {
     ? h('span', null, `von ${fmtKcal(g.kcal)} kcal · ${(t.kcal ?? 0) <= g.kcal ? `noch ${fmtKcal(g.kcal - (t.kcal ?? 0))}` : `${fmtKcal((t.kcal ?? 0) - g.kcal)} drüber`}`)
     : h('span', null, 'kcal');
   const macro = (cls, label, v, goal) => h('div', { class: `macro ${cls}` },
-    h('b', null, fmtMacro(v ?? 0), ' g'),
-    h('span', { class: 'muted' }, label, goal > 0 ? ` / ${fmtKcal(goal)} g` : ''),
+    h('b', null, fmtMacro(v ?? 0), goal > 0 ? h('small', { class: 'muted' }, ` / ${fmtKcal(goal)}`) : '', ' g'),
+    h('span', { class: 'muted' }, label),
     progress(v, goal) ?? h('div', { class: 'bar' }, h('i', { style: { width: '0' } })),
   );
   return h('section', { class: 'card summary', 'aria-label': 'Tagessumme' },

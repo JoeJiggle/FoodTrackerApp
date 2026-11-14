@@ -1,6 +1,0 @@
-{
-  "version": "0.0.1",
-  "configurations": [
-    { "name": "futter", "runtimeExecutable": "node", "runtimeArgs": ["scripts/serve.mjs", "8080"], "port": 8080 }
-  ]
-}

@@ -41,7 +41,10 @@ export function searchEntries(entries, query, { usage = {}, limit = 60 } = {}) {
     else if ((' ' + name).includes(' ' + words[0])) score += 35;
     else if (name.includes(words[0])) score += 20;
     else score += 5; // nur in Synonym/anderer Sprache gefunden
-    for (const w of words) if ((' ' + e.text).includes(' ' + w)) score += 4;
+    for (const w of words) {
+      if ((' ' + e.text).includes(' ' + w)) score += 4; // Wortanfang
+      if ((' ' + name + ' ').includes(' ' + w + ' ')) score += 8; // ganzes Wort im Namen
+    }
     score -= Math.min(name.length, 60) / 6;
     const u = usage[e.key];
     if (u) score += Math.min(50, 12 * Math.log2(1 + u));
