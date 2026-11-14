@@ -19,8 +19,9 @@ export async function renderToday(root) {
   const entries = await entriesForDate(state.date);
   const totals = totalsOf(entries);
 
-  root.append(...[dayNav(), backupReminder(), summaryCard(totals, s), await monthCard(s)].filter(Boolean));
+  root.append(...[dayNav(), backupReminder(), summaryCard(totals, s)].filter(Boolean));
   for (const meal of MEALS) root.append(mealCard(meal, entries.filter((e) => e.meal === meal.id), s));
+  root.append(await monthCard(s)); // unter den Mahlzeiten, damit das Eintragen ohne Scrollen erreichbar bleibt
 }
 
 function dayNav() {
