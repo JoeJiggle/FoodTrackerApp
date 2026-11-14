@@ -1,5 +1,6 @@
 // Gewicht: Eintragen, Verlauf als Linie (mit 7-Tage-Durchschnitt), Kennzahlen, letzte Werte.
 import { h, icon, toast, decimalInput, confirmAction, pageHeader } from '../ui.js';
+import { refreshView } from '../state.js';
 import { fmtKcal, fmtInput, todayISO, addDays, parseISO } from '../format.js';
 import { parseDecimal } from '../nutrition.js';
 import { entriesInRange, totalsOf } from '../log.js';
@@ -17,7 +18,7 @@ export async function renderWeight(root) {
   const all = (await allWeights()).sort((a, b) => a.date.localeCompare(b.date));
   const from = view.range === 'all' ? (all[0]?.date ?? today) : addDays(today, -(Number(view.range) - 1));
   const points = all.filter((p) => p.date >= from && p.date <= today);
-  const rerender = async () => { const f = h('div'); await renderWeight(f); root.replaceChildren(...f.childNodes); };
+  const rerender = refreshView; // neu zeichnen über die App (root ist nur ein Zwischenbehälter)
 
   root.append(pageHeader('Gewicht'), await entryCard(rerender, all));
   root.append(

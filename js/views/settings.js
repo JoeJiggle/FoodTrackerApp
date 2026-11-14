@@ -16,6 +16,7 @@ export async function renderSettings(root) {
     displayCard(s),
     await datasetsCard(s),
     backupCard(s),
+    await resetCard(),
     await aboutCard(),
   );
 }
@@ -137,6 +138,25 @@ function backupCard(s) {
       h('button', { class: 'btn block', onclick: () => fileInput.click() }, 'Backup importieren'),
     ),
     fileInput,
+  );
+}
+
+async function resetCard() {
+  const count = (await db.getAll('weights')).length;
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h3', null, 'Daten zurücksetzen')),
+    h('p', { class: 'muted small', style: { marginTop: '4px' } }, `Gewichtsdaten: ${count} ${count === 1 ? 'Wert' : 'Werte'} gespeichert.`),
+    h('button', { class: 'btn danger block', disabled: !count, onclick: async () => {
+      const ok = await ask({
+        title: 'Alle Gewichtsdaten löschen?',
+        text: `${count} ${count === 1 ? 'Wert wird' : 'Werte werden'} endgültig gelöscht. Das lässt sich nicht rückgängig machen – nur über ein vorher exportiertes Backup wiederherstellen. Tagesprotokoll und alles andere bleiben erhalten.`,
+        buttons: [{ label: 'Endgültig löschen', value: true, danger: true }, { label: 'Abbrechen', value: false }],
+      });
+      if (!ok) return;
+      await db.clearStore('weights');
+      toast('Gewichtsdaten gelöscht');
+      refreshView();
+    } }, 'Gewichtsdaten zurücksetzen'),
   );
 }
 

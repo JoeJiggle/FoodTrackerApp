@@ -1,6 +1,6 @@
 // Verlauf: Woche/Monat als Balkendiagramm (eigenes SVG) und Durchschnittswerte.
 import { h, icon, pageHeader } from '../ui.js';
-import { state } from '../state.js';
+import { state, refreshView } from '../state.js';
 import { settings } from '../settings.js';
 import { fmtKcal, fmtMacro, todayISO, addDays, parseISO } from '../format.js';
 import { entriesInRange, totalsOf } from '../log.js';
@@ -40,7 +40,7 @@ export async function renderHistory(root) {
   const logged = days.filter((d) => d.count > 0);
   const avg = (k) => (logged.length ? logged.reduce((s, d) => s + (d.totals[k] ?? 0), 0) / logged.length : null);
   const s = settings();
-  const rerender = async () => { const f = h('div'); await renderHistory(f); root.replaceChildren(...f.childNodes); };
+  const rerender = refreshView; // neu zeichnen über die App (root ist nur ein Zwischenbehälter)
 
   root.append(
     pageHeader('Verlauf'),

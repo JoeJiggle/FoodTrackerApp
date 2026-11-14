@@ -1,7 +1,7 @@
 // Service Worker: hält die App offline verfügbar.
 // Bei jeder Änderung an App-Dateien CACHE erhöhen (und APP_VERSION in js/version.js),
 // sonst bekommen installierte Apps das Update nicht.
-const CACHE = 'personalfoodtracker-1.4.1';
+const CACHE = 'personalfoodtracker-1.4.2';
 
 const APP_FILES = [
   './',

@@ -122,6 +122,14 @@ export async function putMany(store, values) {
   await done(tx);
 }
 
+/** Leert einen Bereich vollständig. */
+export async function clearStore(store) {
+  const db = await openDB();
+  const tx = db.transaction(store, 'readwrite');
+  tx.objectStore(store).clear();
+  await done(tx);
+}
+
 export async function del(store, key) {
   const db = await openDB();
   const tx = db.transaction(store, 'readwrite');
