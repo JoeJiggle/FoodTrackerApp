@@ -37,6 +37,8 @@ function toFoods(id, json) {
       food.original = fi && fi !== food.name ? fi : '';
       food.names = { en, fi, sv };
       food.sub = category;
+      const sv100 = row[idx.servings];
+      if (Array.isArray(sv100)) food.servings = sv100.map(([l, grams]) => ({ label: json.servingLabels[l], grams }));
     }
     return food;
   });

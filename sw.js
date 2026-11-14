@@ -1,7 +1,7 @@
 // Service Worker: hält die App offline verfügbar.
 // Bei jeder Änderung an App-Dateien CACHE erhöhen (und APP_VERSION in js/version.js),
 // sonst bekommen installierte Apps das Update nicht.
-const CACHE = 'futter-1.0.0';
+const CACHE = 'futter-1.1.0';
 
 const APP_FILES = [
   './',

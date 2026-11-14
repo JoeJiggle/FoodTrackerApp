@@ -47,14 +47,16 @@ Gewünschte Änderung beschreiben und am Ende „committen und pushen“ sagen. 
 | Quelle | Stand | Heruntergeladen | Lizenz / Bedingungen |
 |---|---|---|---|
 | [Schweizer Nährwertdatenbank](https://naehrwertdaten.ch) (BLV) | Version 7.1 vom 01.07.2026 (Datei `Schweizer_Nahrwertdatenbank.xlsx`, Tabellenblatt „Generische Lebensmittel“, 1216 Lebensmittel) | 14.11.2026 | Freie Nutzung, auch kommerziell; Quellenangabe Pflicht ([opendata.swiss](https://opendata.swiss/de/dataset/naehrwerte_lebensmittel), [Downloadseite](https://naehrwertdaten.ch/de/downloads/)) |
-| [Fineli](https://fineli.fi) (THL, Finnland) | noch nicht enthalten – siehe unten | – | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) laut [THL Open Data](https://thl.fi/en/research/open-data) |
+| [Fineli](https://fineli.fi) (THL, Finnland) | Release 20.0 (Basispaket `Fineli_Rel20.zip`, 4238 Lebensmittel; Namen englisch, finnisch, schwedisch) | 14.11.2026 | © THL, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (laut `descript.txt` im Paket und [THL Open Data](https://thl.fi/en/research/open-data)) |
 | [Open Food Facts](https://world.openfoodfacts.org) | live per API | – | [ODbL](https://opendatacommons.org/licenses/odbl/1-0/) |
 
 Die Quellenangaben stehen auch in der App unter **Mehr → Über**.
 
 Übernommen werden nur: ID, Name, Kategorie, kcal, Eiweiß, Kohlenhydrate, Zucker, Fett, gesättigte Fettsäuren,
 Ballaststoffe, Salz – jeweils pro 100 g. In der Schweizer Datenbank bedeuten „Sp.“ (Spuren) und „<x“ (unter der
-Bestimmungsgrenze) 0, „k.A.“ wird als „unbekannt“ angezeigt.
+Bestimmungsgrenze) 0, „k.A.“ wird als „unbekannt“ angezeigt. Bei Fineli wird Energie von kJ in kcal umgerechnet
+(÷ 4,184) und Salz von mg in g; fehlt Salz, wird es aus Natrium berechnet (× 2,5). Zusätzlich übernommen: die
+Fineli-Portionsgrößen „mittlere Portion“, „1 Stück“, „1 Stück (Hersteller)“, „1 dl“.
 
 ### Datenbanken aktualisieren oder ergänzen
 
@@ -62,8 +64,9 @@ Die Rohdaten liegen in `quelldaten/` (wird nicht veröffentlicht).
 
 1. **Schweiz:** Excel-Datei von <https://naehrwertdaten.ch/de/downloads/> nach `quelldaten/` legen, dann
    `node scripts/convert-naehrwertdaten.mjs` ausführen → erzeugt `data/foods-ch.json`.
-2. **Fineli:** ZIP von <https://fineli.fi/fineli/en/avoin-data> herunterladen, nach `quelldaten/fineli/` entpacken, dann
-   `node scripts/convert-fineli.mjs` ausführen → erzeugt `data/foods-fi.json`.
+2. **Fineli:** Das Basispaket (z. B. `Fineli_Rel20.zip`) von <https://fineli.fi/fineli/en/avoin-data> herunterladen
+   (die Seite verlangt eine Bestätigung „Ich bin ein Mensch“, deshalb von Hand), nach `quelldaten/fineli/<Paketname>/`
+   entpacken, dann `node scripts/convert-fineli.mjs quelldaten/fineli/<Paketname>` ausführen → erzeugt `data/foods-fi.json`.
 3. Datum und Version oben in der Tabelle eintragen, Versionsnummer erhöhen (siehe „Updates“), committen, pushen.
 
 Fehlt eine der beiden JSON-Dateien, funktioniert die App trotzdem; die Datenbank erscheint dann in den
