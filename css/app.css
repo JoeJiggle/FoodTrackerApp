@@ -321,6 +321,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 /* Scanner nur einblenden statt hereinschieben: Videos in transformierten Ebenen bleiben auf iOS teils schwarz. */
 .screen.scanner { transform: none; opacity: 0; transition: opacity .15s; }
 .screen.scanner.open { opacity: 1; }
+.video-wrap video { z-index: 0; }
+.video-wrap .frame { z-index: 1; }
+.video-wrap .msg { z-index: 2; }
+.video-wrap .msg .diag { display: block; margin-top: 8px; font-size: 11px; opacity: .75; }
 .video-wrap .msg .btn { background: rgb(255 255 255 / .9); color: #000; min-height: 40px; }
 .scanner .screen-header { background: #000; border-color: #222; color: #fff; }
 .scanner .screen-header .btn-icon { color: #fff; }
