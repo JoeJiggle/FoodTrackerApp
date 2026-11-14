@@ -15,6 +15,33 @@ Einzige Netzwerkverbindung: die Barcode-Abfrage bei Open Food Facts.
 - Verlauf (Woche/Monat) als Balkendiagramm
 - Backup als JSON-Datei (Export über den Teilen-Dialog, Import mit Zusammenführen oder Ersetzen)
 
+## Installation auf dem iPhone
+
+Adresse: <https://joejiggle.github.io/FoodTrackerApp/>
+
+1. Die Adresse in **Safari** öffnen (nicht in Chrome o. Ä.).
+2. Unten auf **Teilen** (Quadrat mit Pfeil) tippen → **Zum Home-Bildschirm** → **Hinzufügen**.
+3. Die App ab jetzt immer über das Symbol „Futter“ auf dem Home-Bildschirm starten.
+
+**Kamera:** Beim ersten Live-Scan fragt iOS nach der Kamera → **Erlauben**. Damit seltener gefragt wird:
+Einstellungen → Apps → Safari → Kamera → **Erlauben**. Ohne Freigabe funktionieren „Foto aufnehmen“ und
+„Nummer eingeben“ trotzdem.
+
+**Backup:** Mehr → Backup exportieren → im Teilen-Dialog „In Dateien sichern“ (z. B. iCloud Drive).
+Wiederherstellen: Mehr → Backup importieren → Datei wählen → Zusammenführen oder Ersetzen.
+
+## Änderungen einspielen
+
+PowerShell öffnen und eingeben:
+
+```
+cd $HOME\Projekte\futter-app
+claude
+```
+
+Gewünschte Änderung beschreiben und am Ende „committen und pushen“ sagen. Nach ein bis zwei Minuten zeigt die App
+„Neue Version verfügbar – Neu laden“.
+
 ## Datenquellen
 
 | Quelle | Stand | Heruntergeladen | Lizenz / Bedingungen |
