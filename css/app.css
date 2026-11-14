@@ -1,4 +1,4 @@
-/* Futter – ruhiges, mobiles Layout. Hell/Dunkel automatisch. */
+/* PersonalFoodTracker – ruhiges, mobiles Layout. Hell/Dunkel automatisch. */
 
 :root {
   color-scheme: light dark;
@@ -46,7 +46,8 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+/* Kein Zoomen per Doppeltipp (App-Gefühl statt Webseite); Pinch-Zoom sperrt js/app.js */
+html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 body {
   margin: 0;
   background: var(--bg);

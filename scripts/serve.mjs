@@ -24,4 +24,4 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404).end('Nicht gefunden');
   }
-}).listen(port, () => console.log(`Futter läuft auf http://localhost:${port}/`));
+}).listen(port, () => console.log(`PersonalFoodTracker läuft auf http://localhost:${port}/`));

@@ -65,14 +65,18 @@ async function datasetsCard(s) {
 
 // ---------- Backup ----------
 
+// Kennung in Backup-Dateien. „futter“ = frühere App-Name, solche Backups bleiben importierbar.
+const BACKUP_ID = 'personalfoodtracker';
+const BACKUP_IDS = [BACKUP_ID, 'futter'];
+
 export async function exportBackup() {
   const data = await db.exportAll();
-  const payload = { app: 'futter', appVersion: APP_VERSION, schemaVersion: db.SCHEMA_VERSION, exportedAt: new Date().toISOString(), data };
-  const name = `futter-backup-${todayISO()}.json`;
+  const payload = { app: BACKUP_ID, appVersion: APP_VERSION, schemaVersion: db.SCHEMA_VERSION, exportedAt: new Date().toISOString(), data };
+  const name = `personalfoodtracker-backup-${todayISO()}.json`;
   const file = new File([JSON.stringify(payload)], name, { type: 'application/json' });
   try {
     if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: 'Futter-Backup' });
+      await navigator.share({ files: [file], title: 'PersonalFoodTracker-Backup' });
     } else {
       const url = URL.createObjectURL(file);
       const a = h('a', { href: url, download: name });
@@ -99,7 +103,7 @@ async function importBackup(file) {
   } catch {
     return toast('Die Datei ist kein gültiges Backup.');
   }
-  if (payload?.app !== 'futter' || !payload.data) return toast('Die Datei ist kein Futter-Backup.');
+  if (!BACKUP_IDS.includes(payload?.app) || !payload.data) return toast('Die Datei ist kein PersonalFoodTracker-Backup.');
   if (payload.schemaVersion > db.SCHEMA_VERSION) return toast('Das Backup stammt aus einer neueren App-Version. Bitte zuerst die App aktualisieren.');
   const n = payload.data.logEntries?.length ?? 0;
   const mode = await ask({
@@ -141,7 +145,7 @@ async function aboutCard() {
   const link = (url, text) => h('a', { href: url, target: '_blank', rel: 'noopener' }, text ?? url.replace(/^https:\/\//, ''));
   return h('section', { class: 'card' },
     h('div', { class: 'card-head' }, h('h3', null, 'Über')),
-    h('p', null, `Futter ${APP_VERSION} – private App ohne Konto, ohne Werbung, ohne Tracking. Alle Daten bleiben auf diesem Gerät. Nur beim Scannen wird die Barcode-Nummer an Open Food Facts geschickt.`),
+    h('p', null, `PersonalFoodTracker ${APP_VERSION} – private App ohne Konto, ohne Werbung, ohne Tracking. Alle Daten bleiben auf diesem Gerät. Nur beim Scannen wird die Barcode-Nummer an Open Food Facts geschickt.`),
     persisted != null && h('p', { class: 'muted small' }, persisted ? 'Speicher ist als dauerhaft markiert.' : 'Speicher ist nicht als dauerhaft markiert – regelmäßige Backups sind besonders wichtig.'),
     h('h4', { style: { margin: '16px 0 6px' } }, 'Datenquellen'),
     h('p', { class: 'small' }, h('b', null, 'Open Food Facts'), ' – Produktdaten von ', link('https://world.openfoodfacts.org'), ', verfügbar unter der ',

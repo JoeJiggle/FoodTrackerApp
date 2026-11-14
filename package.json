@@ -1,5 +1,5 @@
 {
-  "name": "futter-app",
+  "name": "personalfoodtracker",
   "private": true,
   "type": "module",
   "description": "Nur für Werkzeuge (Konvertierung, Tests). Die App selbst braucht kein npm.",

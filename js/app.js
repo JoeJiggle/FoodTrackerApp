@@ -53,8 +53,15 @@ async function start() {
   document.getElementById('fab').addEventListener('click', () => openAddMenu());
   await render();
   watchDayChange();
+  preventZoom();
   requestPersistence();
   registerServiceWorker();
+}
+
+/** Zoomen per Zwei-Finger-Geste verhindern (Safari-Gesten-Ereignisse und Mehrfinger-Bewegung). */
+function preventZoom() {
+  for (const type of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 }
 
 /**

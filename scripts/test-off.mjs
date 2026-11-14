@@ -9,7 +9,7 @@ for (const code of codes) {
   let r, j;
   try {
     r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${FIELDS}`, {
-      headers: { 'User-Agent': 'Futter-PWA/1.0 (private app)' },
+      headers: { 'User-Agent': 'PersonalFoodTracker/1.0 (private app)' },
       signal: AbortSignal.timeout(15000),
     });
     j = await r.json().catch(() => null);

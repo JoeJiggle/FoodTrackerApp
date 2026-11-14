@@ -1,4 +1,4 @@
-# Futter
+# PersonalFoodTracker
 
 Private Kalorien- und Lebensmittel-App für das iPhone (Progressive Web App).
 Ohne Konto, ohne Werbung, ohne Tracking. Alle Daten bleiben auf dem Gerät.
@@ -25,7 +25,7 @@ Adresse: <https://joejiggle.github.io/FoodTrackerApp/>
 
 1. Die Adresse in **Safari** öffnen (nicht in Chrome o. Ä.).
 2. Unten auf **Teilen** (Quadrat mit Pfeil) tippen → **Zum Home-Bildschirm** → **Hinzufügen**.
-3. Die App ab jetzt immer über das Symbol „Futter“ auf dem Home-Bildschirm starten.
+3. Die App ab jetzt immer über das Symbol „PersonalFoodTracker“ auf dem Home-Bildschirm starten.
 
 **Kamera:** Beim ersten Live-Scan fragt iOS nach der Kamera → **Erlauben**. Damit seltener gefragt wird:
 Einstellungen → Apps → Safari → Kamera → **Erlauben**. Ohne Freigabe funktionieren „Foto aufnehmen“ und

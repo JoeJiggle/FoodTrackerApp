@@ -5,6 +5,7 @@
 //  - SCHEMA_VERSION: Datenformat innerhalb der Stores – Umwandlungen in MIGRATIONS.
 // Beide nur erhöhen, nie verringern. Alte Daten werden schrittweise migriert.
 
+// Interner Name aus der ersten Version – nicht ändern, sonst wären alle gespeicherten Daten weg.
 const DB_NAME = 'futter';
 const DB_VERSION = 2;
 export const SCHEMA_VERSION = 1;

@@ -1,6 +1,6 @@
 {
-  "name": "Futter",
-  "short_name": "Futter",
+  "name": "PersonalFoodTracker",
+  "short_name": "PersonalFoodTracker",
   "description": "Private Kalorien- und Lebensmittel-App mit Barcode-Scanner",
   "lang": "de",
   "start_url": "./",
