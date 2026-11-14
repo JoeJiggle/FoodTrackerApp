@@ -47,7 +47,7 @@ export function searchEntries(entries, query, { usage = {}, limit = 60 } = {}) {
     }
     score -= Math.min(name.length, 60) / 6;
     const u = usage[e.key];
-    if (u) score += Math.min(50, 12 * Math.log2(1 + u));
+    if (u) score += Math.min(60, 15 * Math.log2(1 + u));
     results.push({ entry: e, score });
   }
   results.sort((a, b) => b.score - a.score || a.entry.name.localeCompare(b.entry.name, 'de'));
