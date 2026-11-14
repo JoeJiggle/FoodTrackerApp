@@ -8,7 +8,8 @@ import { readWorkbook } from './lib/xlsx.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const input = process.argv[2] ?? join(root, 'quelldaten', readdirSync(join(root, 'quelldaten')).find((f) => f.endsWith('.xlsx')));
-const SHEET = 'Generische Lebensmittel';
+// Generische Lebensmittel und Markenprodukte (gleicher Aufbau, IDs eindeutig über beide Blätter)
+const SHEETS = ['Generische Lebensmittel', 'Markenprodukte'];
 
 // Spalten werden über den exakten Kopfzeilen-Text gesucht, nicht über Positionen.
 const COLUMNS = {
@@ -39,35 +40,44 @@ function parseValue(v) {
 }
 
 const wb = readWorkbook(input);
-const rows = wb.rows(SHEET);
-const title = String(rows[0]?.[0] ?? '');
-const headerIdx = rows.findIndex((r) => r?.[0] === 'ID' && r.includes('Name'));
-if (headerIdx < 0) throw new Error('Kopfzeile nicht gefunden');
-const header = rows[headerIdx];
-const col = {};
-for (const [key, label] of Object.entries(COLUMNS)) {
-  col[key] = header.indexOf(label);
-  if (col[key] < 0) throw new Error(`Spalte „${label}“ fehlt – hat sich das Dateiformat geändert?`);
-}
-
 const categories = [];
 const items = [];
-for (const r of rows.slice(headerIdx + 1)) {
-  if (!r || r[col.id] == null || !r[col.name]) continue;
-  if (!/pro 100\s?g/i.test(String(r[col.unit]))) {
-    console.warn('Übersprungen (andere Bezugseinheit):', r[col.name], r[col.unit]);
-    continue;
+const seen = new Set();
+let title = '';
+
+for (const sheet of SHEETS) {
+  const rows = wb.rows(sheet);
+  title ||= String(rows[0]?.[0] ?? '');
+  const headerIdx = rows.findIndex((r) => r?.[0] === 'ID' && r.includes('Name'));
+  if (headerIdx < 0) throw new Error(`Kopfzeile in „${sheet}“ nicht gefunden`);
+  const header = rows[headerIdx];
+  const col = {};
+  for (const [key, label] of Object.entries(COLUMNS)) {
+    col[key] = header.indexOf(label);
+    if (col[key] < 0) throw new Error(`Spalte „${label}“ fehlt in „${sheet}“ – hat sich das Dateiformat geändert?`);
   }
-  const cat = String(r[col.category] ?? '').split(';')[0];
-  let ci = categories.indexOf(cat);
-  if (ci < 0) ci = categories.push(cat) - 1;
-  items.push([
-    r[col.id],
-    String(r[col.name]).trim(),
-    r[col.synonyms] ? String(r[col.synonyms]).trim() : '',
-    ci,
-    ...NUTRIENTS.map((k) => parseValue(r[col[k]])),
-  ]);
+  let count = 0;
+  for (const r of rows.slice(headerIdx + 1)) {
+    if (!r || r[col.id] == null || !r[col.name]) continue;
+    if (!/pro 100\s?g/i.test(String(r[col.unit]))) {
+      console.warn('Übersprungen (andere Bezugseinheit):', r[col.name], r[col.unit]);
+      continue;
+    }
+    if (seen.has(r[col.id])) throw new Error(`ID ${r[col.id]} kommt doppelt vor`);
+    seen.add(r[col.id]);
+    const cat = String(r[col.category] ?? '').split(';')[0];
+    let ci = categories.indexOf(cat);
+    if (ci < 0) ci = categories.push(cat) - 1;
+    items.push([
+      r[col.id],
+      String(r[col.name]).trim(),
+      r[col.synonyms] ? String(r[col.synonyms]).trim() : '',
+      ci,
+      ...NUTRIENTS.map((k) => parseValue(r[col[k]])),
+    ]);
+    count++;
+  }
+  console.log(`${sheet}: ${count}`);
 }
 
 const out = {

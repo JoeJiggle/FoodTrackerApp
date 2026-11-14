@@ -1,7 +1,7 @@
 // Service Worker: hält die App offline verfügbar.
 // Bei jeder Änderung an App-Dateien CACHE erhöhen (und APP_VERSION in js/version.js),
 // sonst bekommen installierte Apps das Update nicht.
-const CACHE = 'futter-1.1.3';
+const CACHE = 'futter-1.2.0';
 
 const APP_FILES = [
   './',
@@ -41,7 +41,7 @@ const APP_FILES = [
 ];
 
 // Datenbanken sind optional – fehlt eine, wird sie übersprungen.
-const OPTIONAL_FILES = ['data/foods-ch.json', 'data/foods-fi.json'];
+const OPTIONAL_FILES = ['data/foods-de.json', 'data/foods-ch.json', 'data/foods-fi.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {

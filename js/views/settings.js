@@ -58,7 +58,7 @@ async function datasetsCard(s) {
   }));
   return h('section', { class: 'card' },
     h('div', { class: 'card-head' }, h('h3', null, 'Datenbanken in der Suche')),
-    h('p', { class: 'muted small', style: { marginTop: 0 } }, 'Zum Beispiel in Finnland die Schweizer Datenbank ausblenden. Eigene und gescannte Produkte werden immer durchsucht.'),
+    h('p', { class: 'muted small', style: { marginTop: 0 } }, 'Zum Beispiel in Finnland die deutsche und die Schweizer Datenbank ausblenden. Eigene und gescannte Produkte werden immer durchsucht.'),
     rows,
   );
 }
@@ -146,6 +146,9 @@ async function aboutCard() {
     h('h4', { style: { margin: '16px 0 6px' } }, 'Datenquellen'),
     h('p', { class: 'small' }, h('b', null, 'Open Food Facts'), ' – Produktdaten von ', link('https://world.openfoodfacts.org'), ', verfügbar unter der ',
       link('https://opendatacommons.org/licenses/odbl/1-0/', 'Open Database License (ODbL)'), '. Einzelne Inhalte unter der Database Contents License, Bilder unter CC BY-SA.'),
+    h('p', { class: 'small' }, h('b', null, 'Bundeslebensmittelschlüssel (BLS) 4.0'), ' – Max Rubner-Institut (2025): Bundeslebensmittelschlüssel (BLS), Version 4.0 – Deutsche Nährstoffdatenbank. Karlsruhe. ',
+      link('https://doi.org/10.25826/Data20251217-134202-0', 'DOI 10.25826/Data20251217-134202-0'), '. Lizenz ',
+      link('https://creativecommons.org/licenses/by/4.0/deed.de', 'CC BY 4.0'), '. Für die App umgewandelt (Auswahl der Nährstoffe, gerundet).'),
     h('p', { class: 'small' }, h('b', null, 'Schweizer Nährwertdatenbank'), ' – Bundesamt für Lebensmittelsicherheit und Veterinärwesen BLV, ',
       link('https://naehrwertdaten.ch'), '. Freie Nutzung, Quellenangabe Pflicht (', link('https://opendata.swiss/de/dataset/naehrwerte_lebensmittel', 'opendata.swiss'), '). Für die App umgewandelt (Auswahl der Nährstoffe).'),
     h('p', { class: 'small' }, h('b', null, 'Fineli'), ' – ', FINELI_ATTRIBUTION, ' ', link('https://fineli.fi'), ' · ', link('https://creativecommons.org/licenses/by/4.0/deed.de', 'Lizenztext')),

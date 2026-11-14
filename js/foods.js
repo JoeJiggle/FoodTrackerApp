@@ -5,7 +5,7 @@ import { pickDisplayName, recipePer100, recipeRawWeight } from './nutrition.js';
 import { loadDataset } from './datasets.js';
 import { fetchProduct } from './off-api.js';
 
-export const SOURCE_LABEL = { ch: 'CH', fi: 'FI', off: 'OFF', custom: 'Eigen', recipe: 'Rezept' };
+export const SOURCE_LABEL = { de: 'DE', ch: 'CH', fi: 'FI', off: 'OFF', custom: 'Eigen', recipe: 'Rezept' };
 
 // ---------- Umwandlung in das einheitliche Format ----------
 
@@ -84,7 +84,7 @@ export async function getFood(key) {
   } else if (source === 'recipe') {
     const r = await db.get('recipes', id);
     if (r) return foodFromRecipe(r);
-  } else if (source === 'ch' || source === 'fi') {
+  } else if (source === 'de' || source === 'ch' || source === 'fi') {
     const meta = await db.get('foodMeta', key);
     if (meta?.snapshot) return meta.snapshot;
     const { foods } = await loadDataset(source);

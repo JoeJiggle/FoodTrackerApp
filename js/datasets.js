@@ -1,8 +1,9 @@
-// Lädt die Nährwertdatenbanken (CH, FI) erst bei Bedarf.
+// Lädt die Nährwertdatenbanken (DE, CH, FI) erst bei Bedarf.
 // Fehlt eine Datei, wird sie einfach übersprungen – die App funktioniert ohne sie.
 import { NUTRIENTS } from './nutrition.js';
 
 export const DATASETS = {
+  de: { label: 'Bundeslebensmittelschlüssel (Deutschland)', short: 'DE', file: 'data/foods-de.json' },
   ch: { label: 'Schweizer Nährwertdatenbank', short: 'CH', file: 'data/foods-ch.json' },
   fi: { label: 'Fineli (Finnland)', short: 'FI', file: 'data/foods-fi.json' },
 };
@@ -27,7 +28,11 @@ function toFoods(id, json) {
     for (const k of NUTRIENTS) per100[k] = row[idx[k]] ?? null;
     const category = json.categories?.[row[idx.category]] ?? '';
     const food = { key: `${id}:${row[idx.id]}`, source: id, id: row[idx.id], per100, unit: 'g', servings: [], category };
-    if (id === 'ch') {
+    if (id === 'de') {
+      food.name = row[idx.name];
+      food.names = { de: row[idx.name], en: row[idx.nameEn] || '' };
+      food.sub = category;
+    } else if (id === 'ch') {
       food.name = row[idx.name];
       food.names = { de: row[idx.name], synonyms: row[idx.synonyms] || '' };
       food.sub = category.includes('/') ? category.slice(category.indexOf('/') + 1) : category;

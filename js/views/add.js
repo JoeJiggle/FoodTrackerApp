@@ -7,6 +7,7 @@ import { NUTRIENT_LABELS, scaleNutrients, parseDecimal, kcalToKj } from '../nutr
 import { MEALS, addEntry, updateEntry, deleteEntry } from '../log.js';
 import { SOURCE_LABEL, getMeta, setFavorite, saveServings, allServings, listFavorites, listRecent, fetchAndStoreProduct } from '../foods.js';
 import { buildSearchIndex } from '../search.js';
+import { DATASETS } from '../datasets.js';
 import { openManualForm } from './manual.js';
 
 // ---------- Listenzeile für ein Lebensmittel ----------
@@ -66,7 +67,7 @@ export function openFoodPicker({ title = 'Suchen', onPick }) {
       buildSearchIndex().then((idx) => {
         index = idx;
         const s = settings().datasets;
-        const off = [!s.ch && 'CH', !s.fi && 'FI'].filter(Boolean);
+        const off = Object.entries(DATASETS).filter(([id]) => !s[id]).map(([, d]) => d.short);
         status.textContent = off.length ? `Ausgeblendet: ${off.join(', ')} (in den Einstellungen änderbar)` : '';
         run();
       });

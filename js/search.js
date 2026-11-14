@@ -25,11 +25,12 @@ async function datasetIndex(id) {
 /** Baut den Suchindex. Lokale Daten werden jedes Mal frisch gelesen (klein), Datenbanken nur einmal. */
 export async function buildSearchIndex() {
   const enabled = settings().datasets;
-  const [products, customs, recipes, usage, ch, fi] = await Promise.all([
+  const [products, customs, recipes, usage, de, ch, fi] = await Promise.all([
     db.getAll('products'),
     db.getAll('customFoods'),
     db.getAll('recipes'),
     usageCounts(),
+    enabled.de ? datasetIndex('de') : [],
     enabled.ch ? datasetIndex('ch') : [],
     enabled.fi ? datasetIndex('fi') : [],
   ]);
@@ -37,6 +38,7 @@ export async function buildSearchIndex() {
     ...customs.map((c) => toEntry(foodFromCustom(c))),
     ...recipes.map((r) => toEntry(foodFromRecipe(r))),
     ...products.map((p) => toEntry(foodFromProduct(p))),
+    ...de,
     ...ch,
     ...fi,
   ];
