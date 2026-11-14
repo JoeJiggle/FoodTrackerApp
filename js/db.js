@@ -6,10 +6,10 @@
 // Beide nur erhöhen, nie verringern. Alte Daten werden schrittweise migriert.
 
 const DB_NAME = 'futter';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 export const SCHEMA_VERSION = 1;
 
-export const STORES = ['products', 'customFoods', 'recipes', 'logEntries', 'foodMeta', 'settings'];
+export const STORES = ['products', 'customFoods', 'recipes', 'logEntries', 'foodMeta', 'settings', 'templates', 'weights'];
 
 function upgradeStructure(db, oldVersion) {
   if (oldVersion < 1) {
@@ -23,6 +23,12 @@ function upgradeStructure(db, oldVersion) {
     // Pro Lebensmittel (Schlüssel z.B. "ch:123", "off:4001234"): Nutzung, Favorit, eigene Portionen, Schnappschuss
     db.createObjectStore('foodMeta', { keyPath: 'key' });
     db.createObjectStore('settings', { keyPath: 'key' });
+  }
+  if (oldVersion < 2) {
+    // Mahlzeit-Vorlagen (mehrere Einträge mit einem Tipp)
+    db.createObjectStore('templates', { keyPath: 'id' });
+    // Gewicht, ein Wert pro Tag, Schlüssel = Datum 'JJJJ-MM-TT'
+    db.createObjectStore('weights', { keyPath: 'date' });
   }
 }
 
@@ -91,6 +97,12 @@ export async function getAll(store) {
 export async function getAllByIndex(store, index, query) {
   const db = await openDB();
   return req(db.transaction(store).objectStore(store).index(index).getAll(query));
+}
+
+/** Alle Datensätze mit Schlüssel zwischen from und to (einschließlich). */
+export async function getAllInRange(store, from, to) {
+  const db = await openDB();
+  return req(db.transaction(store).objectStore(store).getAll(IDBKeyRange.bound(from, to)));
 }
 
 export async function put(store, value) {

@@ -1,5 +1,5 @@
 // Eigene Lebensmittel, Rezepte und gescannte Produkte.
-import { h, icon, openScreen, actionSheet, toast, decimalInput, confirmAction } from '../ui.js';
+import { h, icon, openScreen, actionSheet, toast, decimalInput, confirmAction, pageHeader } from '../ui.js';
 import { state, refreshView } from '../state.js';
 import * as db from '../db.js';
 import { fmtKcal, fmtMacro, fmtAmount, fmtInput } from '../format.js';
@@ -16,7 +16,7 @@ export async function renderOwnFoods(root) {
   const logCtx = () => ({ date: state.date, meal: mealForNow() });
 
   root.append(
-    h('h1', { class: 'page-title' }, 'Eigene'),
+    pageHeader('Eigene'),
     h('div', { class: 'row', style: { marginBottom: '14px' } },
       h('button', { class: 'btn primary grow', onclick: () => openManualForm({}) }, icon('plus'), 'Lebensmittel'),
       h('button', { class: 'btn primary grow', onclick: () => openRecipeEditor() }, icon('pot'), 'Rezept'),

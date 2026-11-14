@@ -1,5 +1,5 @@
 // Startbildschirm: Tagessummen, Monatsübersicht, Mahlzeiten, Tageswechsel.
-import { h, icon, actionSheet, toast, confirmAction } from '../ui.js';
+import { h, icon, actionSheet, toast, confirmAction, promptText, settingsButton } from '../ui.js';
 import { state, refreshView } from '../state.js';
 import { settings, setSetting } from '../settings.js';
 import { fmtKcal, fmtMacro, fmtAmount, fmtDateLong, addDays, todayISO, parseISO } from '../format.js';
@@ -10,6 +10,9 @@ import { openFoodDetail, openFoodPicker, openStoredList } from './add.js';
 import { openScanner } from './scan.js';
 import { openManualForm } from './manual.js';
 import { exportBackup } from './settings.js';
+import { openQuickEntry } from './quick.js';
+import { openTemplates } from './templates.js';
+import { saveTemplate } from '../templates.js';
 
 const DAY_MS = 86400000;
 
@@ -35,6 +38,7 @@ function dayNav() {
     state.date === todayISO()
       ? h('span', { style: { width: '44px' } })
       : h('button', { class: 'btn-icon', 'aria-label': 'Nächster Tag', onclick: () => { state.date = addDays(state.date, 1); refreshView(); } }, icon('right')),
+    settingsButton(),
   );
 }
 
@@ -127,6 +131,7 @@ async function monthCard(s) {
   const hasGoal = goalsMet({}, s.goals, goalKeys) !== null;
 
   const entries = await entriesInRange(`${calMonth}-01`, `${calMonth}-${pad(daysInMonth)}`);
+  const streak = hasGoal ? await currentStreak(s.goals, goalKeys) : null;
   const byDate = {};
   for (const e of entries) (byDate[e.date] ??= []).push(e);
 
@@ -158,7 +163,7 @@ async function monthCard(s) {
   const open = s.showMonth;
   const monthName = new Date(y, m - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
   const summary = hasGoal
-    ? `${met} ${met === 1 ? 'Tag' : 'Tage'} Ziel erreicht`
+    ? `${met} ${met === 1 ? 'Tag' : 'Tage'} Ziel erreicht${streak?.days ? ` · Serie ${streak.days}` : ''}`
     : `${logged} ${logged === 1 ? 'Tag' : 'Tage'} erfasst`;
 
   return h('section', { class: 'card month', 'aria-label': 'Monatsübersicht' },
@@ -178,8 +183,28 @@ async function monthCard(s) {
       ? h('div', { class: 'cal-legend' },
         h('span', null, h('i', { class: 'dot met' }), `Ziel erreicht: ${met}`),
         h('span', null, h('i', { class: 'dot logged' }), `nicht erreicht: ${logged - met}`))
-      : h('p', { class: 'muted small', style: { margin: '8px 0 0' } }, 'Setze unter ', h('a', { href: '#einstellungen' }, 'Mehr → Tagesziele'), ' ein Ziel, dann werden Tage mit erreichtem Ziel grün markiert.')),
+      : h('p', { class: 'muted small', style: { margin: '8px 0 0' } }, 'Setze unter ', h('a', { href: '#einstellungen' }, 'Einstellungen → Tagesziele'), ' ein Ziel, dann werden Tage mit erreichtem Ziel grün markiert.')),
+    open && streak?.days > 0 && h('p', { class: 'streak' },
+      `Serie: ${streak.days} ${streak.days === 1 ? 'Tag' : 'Tage'} in Folge Ziel erreicht`,
+      streak.todayOpen ? h('span', { class: 'muted' }, ' · heute noch offen') : ''),
   );
+}
+
+/**
+ * Aktuelle Serie: Tage in Folge mit erreichtem Ziel, rückwärts ab heute.
+ * Ist heute (noch) nicht erreicht, zählt die Serie bis gestern – der Tag läuft ja noch.
+ */
+async function currentStreak(goals, keys) {
+  const today = todayISO();
+  const entries = await entriesInRange(addDays(today, -400), today);
+  const byDate = {};
+  for (const e of entries) (byDate[e.date] ??= []).push(e);
+  const metOn = (d) => !!byDate[d] && goalsMet(totalsOf(byDate[d]), goals, keys) === true;
+  const todayOpen = !metOn(today);
+  let d = todayOpen ? addDays(today, -1) : today;
+  let days = 0;
+  while (metOn(d)) { days++; d = addDays(d, -1); }
+  return { days, todayOpen };
 }
 
 function mealCard(meal, entries, s) {
@@ -204,7 +229,7 @@ function entryRow(e, s) {
   return h('button', { class: 'list-item', onclick: () => editEntry(e) },
     h('span', { class: 'main' },
       h('span', { class: 'title' }, e.name),
-      h('span', { class: 'sub' }, `${fmtAmount(e.amount)} ${e.unit}`, e.brand ? ` · ${e.brand}` : ''),
+      h('span', { class: 'sub' }, e.quick ? 'Schnelleintrag' : `${fmtAmount(e.amount)} ${e.unit}`, e.brand ? ` · ${e.brand}` : ''),
     ),
     h('span', { class: 'value' }, `${fmtKcal(n.kcal)} kcal`,
       s.showMacros && h('small', null, `E ${fmtMacro(n.protein)} · K ${fmtMacro(n.carbs)} · F ${fmtMacro(n.fat)}`)),
@@ -212,6 +237,7 @@ function entryRow(e, s) {
 }
 
 async function editEntry(entry) {
+  if (entry.quick) return openQuickEntry({ date: entry.date, meal: entry.meal }, entry);
   // Lebensmittel aus der Quelle holen (für Portionen/Bild); Nährwerte bleiben die gespeicherte Kopie.
   const food = (await getFood(entry.foodKey)) ?? { key: entry.foodKey, source: entry.source, name: entry.name, brand: entry.brand, unit: entry.unit, servings: [] };
   openFoodDetail({ ...food, name: entry.name, per100: entry.per100 }, { date: entry.date, meal: entry.meal, entry });
@@ -226,6 +252,14 @@ function mealMenu(meal) {
         const n = await copyMeal(yesterday, state.date, meal.id);
         toast(n ? `${n} ${n === 1 ? 'Eintrag' : 'Einträge'} kopiert` : `Gestern gab es keine Einträge bei ${meal.label}.`);
         refreshView();
+      } },
+      { label: 'Als Vorlage speichern', icon: 'stack', onClick: async () => {
+        const list = (await entriesForDate(state.date)).filter((e) => e.meal === meal.id);
+        if (!list.length) return toast(`Bei ${meal.label} gibt es noch keine Einträge.`);
+        const name = await promptText({ title: 'Vorlage speichern', text: `${list.length} ${list.length === 1 ? 'Eintrag' : 'Einträge'} als Vorlage, z. B. „Mein Frühstück“.`, value: `Mein ${meal.label}`, okLabel: 'Speichern' });
+        if (!name) return;
+        await saveTemplate(name, list);
+        toast(`Vorlage „${name}“ gespeichert – im +-Menü unter „Vorlagen“`);
       } },
       { label: `${meal.label} leeren`, icon: 'trash', danger: true, onClick: async () => {
         const list = (await entriesForDate(state.date)).filter((e) => e.meal === meal.id);
@@ -255,6 +289,8 @@ export function openAddMenu(mealId) {
     items: [
       { label: 'Barcode scannen', icon: 'scan', onClick: () => openScanner(ctx) },
       { label: 'Suchen', icon: 'search', onClick: () => openFoodPicker({ title: `Suchen · ${mealLabel(ctx.meal)}`, onPick: log }) },
+      { label: 'Schnelleintrag (nur kcal)', icon: 'bolt', onClick: () => openQuickEntry(ctx) },
+      { label: 'Vorlagen', icon: 'stack', onClick: () => openTemplates(ctx) },
       { label: 'Favoriten', icon: 'star', onClick: () => openStoredList('favorites', { onPick: log }) },
       { label: 'Zuletzt verwendet', icon: 'clock', onClick: () => openStoredList('recent', { onPick: log }) },
       { label: 'Manuell erfassen', icon: 'keyboard', onClick: () => openManualForm({ onSaved: log }) },

@@ -32,6 +32,18 @@ export const icon = (name) => {
   return svg;
 };
 
+/** Zahnrad oben rechts: öffnet die Einstellungen. */
+export const settingsButton = () => h('a', { class: 'btn-icon settings-btn', href: '#einstellungen', 'aria-label': 'Einstellungen' }, icon('gear'));
+
+/** Seitenkopf: Titel links, Zahnrad rechts (oder Zurück-Pfeil links, wenn back gesetzt ist). */
+export function pageHeader(title, { back } = {}) {
+  return h('div', { class: 'page-head' },
+    back && h('button', { class: 'btn-icon', 'aria-label': 'Zurück', onclick: back }, icon('back')),
+    h('h1', { class: 'page-title' }, title),
+    !back && settingsButton(),
+  );
+}
+
 // ---------- Bildschirm-Stapel (Vollbild-Ebenen über der Hauptansicht) ----------
 
 const stack = [];
@@ -119,6 +131,34 @@ export function ask({ title, text, buttons }) {
     document.body.append(backdrop);
     backdrop.getBoundingClientRect();
   backdrop.classList.add('open');
+  });
+}
+
+/** Dialog mit einem Textfeld → Promise mit dem eingegebenen Text (oder null bei Abbruch). */
+export function promptText({ title, text, value = '', placeholder = '', okLabel = 'OK' }) {
+  return new Promise((resolve) => {
+    const input = h('input', { type: 'text', value, placeholder, autocomplete: 'off', enterkeyhint: 'done' });
+    const backdrop = h('div', { class: 'backdrop center' });
+    const finish = (v) => {
+      backdrop.classList.remove('open');
+      setTimeout(() => backdrop.remove(), 200);
+      resolve(v);
+    };
+    const ok = () => { const v = input.value.trim(); if (v) finish(v); };
+    input.addEventListener('keydown', (e) => e.key === 'Enter' && ok());
+    backdrop.append(h('div', { class: 'dialog', role: 'dialog' },
+      title && h('h3', null, title),
+      text && h('p', null, text),
+      h('div', { style: { marginBottom: '14px' } }, input),
+      h('div', { class: 'dialog-buttons' },
+        h('button', { class: 'btn primary', onclick: ok }, okLabel),
+        h('button', { class: 'btn', onclick: () => finish(null) }, 'Abbrechen'),
+      ),
+    ));
+    document.body.append(backdrop);
+    backdrop.getBoundingClientRect();
+    backdrop.classList.add('open');
+    setTimeout(() => { input.focus(); input.select(); }, 150);
   });
 }
 

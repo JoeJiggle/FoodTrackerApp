@@ -8,12 +8,14 @@ import { renderToday, openAddMenu } from './views/today.js';
 import { renderHistory } from './views/history.js';
 import { renderOwnFoods } from './views/own-foods.js';
 import { renderSettings } from './views/settings.js';
+import { renderWeight } from './views/weight.js';
 
 
 const ROUTES = {
   heute: renderToday,
   verlauf: renderHistory,
   eigene: renderOwnFoods,
+  gewicht: renderWeight,
   einstellungen: renderSettings,
 };
 

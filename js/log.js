@@ -51,6 +51,29 @@ export async function addEntry(food, { date, meal, amount, unit }) {
   return entry;
 }
 
+/**
+ * Schnelleintrag ohne Lebensmittel, z. B. „Mittagessen Kantine, 650 kcal“.
+ * Gespeichert wie ein normaler Eintrag mit den Werten als „pro 100“ und Menge 100.
+ */
+export async function addQuickEntry({ date, meal, name, kcal, protein = null, carbs = null, fat = null }) {
+  const entry = {
+    id: db.uid(),
+    date,
+    meal,
+    foodKey: 'quick',
+    source: 'quick',
+    quick: true,
+    name: name || 'Schnelleintrag',
+    brand: '',
+    amount: 100,
+    unit: 'g',
+    per100: { kcal, protein, carbs, fat, sugar: null, satFat: null, fiber: null, salt: null },
+    createdAt: new Date().toISOString(),
+  };
+  await db.put('logEntries', entry);
+  return entry;
+}
+
 export const updateEntry = (entry) => db.put('logEntries', entry);
 export const deleteEntry = (id) => db.del('logEntries', id);
 

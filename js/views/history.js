@@ -1,5 +1,5 @@
 // Verlauf: Woche/Monat als Balkendiagramm (eigenes SVG) und Durchschnittswerte.
-import { h, icon } from '../ui.js';
+import { h, icon, pageHeader } from '../ui.js';
 import { state } from '../state.js';
 import { settings } from '../settings.js';
 import { fmtKcal, fmtMacro, todayISO, addDays, parseISO } from '../format.js';
@@ -43,7 +43,7 @@ export async function renderHistory(root) {
   const rerender = async () => { const f = h('div'); await renderHistory(f); root.replaceChildren(...f.childNodes); };
 
   root.append(
-    h('h1', { class: 'page-title' }, 'Verlauf'),
+    pageHeader('Verlauf'),
     h('div', { class: 'seg', style: { marginBottom: '12px' } },
       [['week', 'Woche'], ['month', 'Monat']].map(([m, l]) => h('button', { class: view.mode === m ? 'on' : '', onclick: () => { view.mode = m; rerender(); } }, l))),
     h('div', { class: 'daynav' },

@@ -162,6 +162,9 @@ export function openFoodDetail(food, ctx = {}) {
       const mealChips = h('div', { class: 'chips' });
       const drawMeals = () => mealChips.replaceChildren(...MEALS.map((m) => h('button', { class: `chip ${m.id === meal ? 'on' : ''}`, onclick: () => { meal = m.id; drawMeals(); } }, m.label)));
       drawMeals();
+      // Tag wählbar – damit lassen sich Einträge auch auf einen anderen Tag verschieben
+      const dateInput = h('input', { type: 'date', value: ctx.entry?.date ?? ctx.date, 'aria-label': 'Tag' });
+      const chosenDate = () => dateInput.value || ctx.entry?.date || ctx.date;
 
       const saveBtn = h('button', { class: 'btn primary block', onclick: save }, editing ? 'Speichern' : ingredientMode ? 'Übernehmen' : 'Hinzufügen');
 
@@ -174,12 +177,13 @@ export function openFoodDetail(food, ctx = {}) {
           return;
         }
         if (editing) {
-          await updateEntry({ ...ctx.entry, amount: a, unit, meal });
+          const date = chosenDate();
+          await updateEntry({ ...ctx.entry, amount: a, unit, meal, date });
           closeAllScreens();
           refreshView();
-          toast('Gespeichert');
+          toast(date === ctx.entry.date ? 'Gespeichert' : `Verschoben auf ${fmtDateLong(date)}`);
         } else {
-          const entry = await addEntry(food, { date: ctx.date, meal, amount: a, unit });
+          const entry = await addEntry(food, { date: chosenDate(), meal, amount: a, unit });
           closeAllScreens();
           refreshView();
           toast(`${food.name} eingetragen`, { action: 'Rückgängig', onAction: async () => { await deleteEntry(entry.id); refreshView(); } });
@@ -196,7 +200,8 @@ export function openFoodDetail(food, ctx = {}) {
           calc,
         ),
         !ingredientMode && h('div', { class: 'card' },
-          h('p', { class: 'muted small', style: { margin: '0 0 8px' } }, `Mahlzeit · ${fmtDateLong(ctx.entry?.date ?? ctx.date)}`), mealChips),
+          h('label', { class: 'field' }, h('span', null, 'Tag'), dateInput),
+          h('p', { class: 'muted small', style: { margin: '0 0 8px' } }, 'Mahlzeit'), mealChips),
         nutritionTable(food),
         h('div', { class: 'stack' }, sourceActions(food, screen, ctx)),
         editing && h('button', { class: 'btn danger block', style: { marginTop: '10px' }, onclick: async () => {

@@ -1,7 +1,7 @@
 // Service Worker: hält die App offline verfügbar.
 // Bei jeder Änderung an App-Dateien CACHE erhöhen (und APP_VERSION in js/version.js),
 // sonst bekommen installierte Apps das Update nicht.
-const CACHE = 'futter-1.3.2';
+const CACHE = 'futter-1.4.0';
 
 const APP_FILES = [
   './',
@@ -30,6 +30,11 @@ const APP_FILES = [
   'js/views/own-foods.js',
   'js/views/history.js',
   'js/views/settings.js',
+  'js/views/quick.js',
+  'js/views/templates.js',
+  'js/views/weight.js',
+  'js/templates.js',
+  'js/weight.js',
   'vendor/zxing-wasm/es/reader/index.js',
   'vendor/zxing-wasm/es/share.js',
   'vendor/zxing-wasm/reader/zxing_reader.wasm',

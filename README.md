@@ -13,6 +13,10 @@ Einzige Netzwerkverbindung: die Barcode-Abfrage bei Open Food Facts.
 - Offline-Suche über Bundeslebensmittelschlüssel, Schweizer Nährwertdatenbank, Fineli, gescannte und eigene Lebensmittel, Rezepte
 - Rezepte mit Gewicht nach dem Kochen und Portionen
 - Verlauf (Woche/Monat) als Balkendiagramm
+- Monatsübersicht auf „Heute“: Tage mit erreichtem Tagesziel grün, Serie in Folge erreichter Tage
+- Schnelleintrag nur mit Kalorien (optional Makros), Einträge auf andere Tage verschieben
+- Mahlzeit-Vorlagen („Mein Frühstück“ mit einem Tipp eintragen)
+- Gewichtsprotokoll mit Verlauf und 7-Tage-Durchschnitt (eigener Tab)
 - Backup als JSON-Datei (Export über den Teilen-Dialog, Import mit Zusammenführen oder Ersetzen)
 
 ## Installation auf dem iPhone
@@ -27,8 +31,8 @@ Adresse: <https://joejiggle.github.io/FoodTrackerApp/>
 Einstellungen → Apps → Safari → Kamera → **Erlauben**. Ohne Freigabe funktionieren „Foto aufnehmen“ und
 „Nummer eingeben“ trotzdem.
 
-**Backup:** Mehr → Backup exportieren → im Teilen-Dialog „In Dateien sichern“ (z. B. iCloud Drive).
-Wiederherstellen: Mehr → Backup importieren → Datei wählen → Zusammenführen oder Ersetzen.
+**Backup:** Einstellungen (Zahnrad oben rechts) → Backup exportieren → im Teilen-Dialog „In Dateien sichern“ (z. B. iCloud Drive).
+Wiederherstellen: Einstellungen → Backup importieren → Datei wählen → Zusammenführen oder Ersetzen.
 
 ## Änderungen einspielen
 
@@ -51,7 +55,7 @@ Gewünschte Änderung beschreiben und am Ende „committen und pushen“ sagen. 
 | [Fineli](https://fineli.fi) (THL, Finnland) | Release 20.0 (Basispaket `Fineli_Rel20.zip`, 4238 Lebensmittel; Namen englisch, finnisch, schwedisch) | 14.11.2026 | © THL, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (laut `descript.txt` im Paket und [THL Open Data](https://thl.fi/en/research/open-data)) |
 | [Open Food Facts](https://world.openfoodfacts.org) | live per API | – | [ODbL](https://opendatacommons.org/licenses/odbl/1-0/) |
 
-Die Quellenangaben stehen auch in der App unter **Mehr → Über**.
+Die Quellenangaben stehen auch in der App unter **Einstellungen (Zahnrad) → Über**.
 
 Übernommen werden nur: ID, Name, Kategorie, kcal, Eiweiß, Kohlenhydrate, Zucker, Fett, gesättigte Fettsäuren,
 Ballaststoffe, Salz – jeweils pro 100 g. In der Schweizer Datenbank bedeuten „Sp.“ (Spuren) und „<x“ (unter der

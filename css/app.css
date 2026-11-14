@@ -77,6 +77,25 @@ main {
 }
 
 .page-title { font-size: 28px; font-weight: 700; margin: 8px 0 16px; }
+.page-head { display: flex; align-items: center; gap: 4px; margin: 0 -6px 0 0; }
+.page-head .page-title { flex: 1; margin: 8px 0 16px; }
+.page-head > .btn-icon:first-child { margin-left: -10px; }
+.settings-btn { color: var(--muted); }
+.settings-btn:active { color: var(--accent); }
+.daynav .settings-btn { margin-left: -4px; }
+
+/* Gewicht */
+.weight-entry { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chart .grid-line { stroke: var(--line); stroke-width: 1; }
+.chart .weight-line { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-opacity: .45; }
+.chart .avg-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.chart .weight-dot { fill: var(--accent); }
+.cal-legend .line-key { display: inline-block; width: 16px; height: 3px; border-radius: 2px; background: var(--accent); }
+
+/* Vorlagen, Serie */
+.list-item .template-pick { border: 0; background: none; padding: 0; text-align: left; min-height: 44px; display: flex; flex-direction: column; justify-content: center; }
+.streak { margin: 8px 0 0; font-size: 14px; font-weight: 600; color: var(--accent); }
+.streak .muted { font-weight: 400; }
 
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;

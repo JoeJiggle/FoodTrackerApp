@@ -1,5 +1,5 @@
 // Einstellungen, Backup und „Über“.
-import { h, toast, decimalInput, ask } from '../ui.js';
+import { h, toast, decimalInput, ask, pageHeader } from '../ui.js';
 import { refreshView } from '../state.js';
 import { settings, setSetting, loadSettings } from '../settings.js';
 import * as db from '../db.js';
@@ -11,7 +11,7 @@ import { APP_VERSION } from '../version.js';
 export async function renderSettings(root) {
   const s = settings();
   root.append(
-    h('h1', { class: 'page-title' }, 'Einstellungen'),
+    pageHeader('Einstellungen', { back: () => (history.length > 1 ? history.back() : (location.hash = '#heute')) }),
     goalsCard(s),
     displayCard(s),
     await datasetsCard(s),
