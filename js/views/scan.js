@@ -38,6 +38,35 @@ export function openScanner(ctx) {
 
   let stage = '';
   let startToken = 0;
+  let scanner = null; // geladenes Scanner-Modul
+  let preview;
+  let status;
+  let rafId = 0;
+  let statusTimer = null;
+
+  /**
+   * Ersatzanzeige: Das Kamerabild wird zusätzlich auf eine Zeichenfläche gemalt. Auf manchen iPhones zeigt
+   * eine Home-Bildschirm-App das Video-Element schwarz an, obwohl die Kamera läuft – die Zeichenfläche nicht.
+   */
+  function drawPreview() {
+    if (!screen.el.isConnected) return;
+    rafId = requestAnimationFrame(drawPreview);
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (!vw || !vh || video.readyState < 2) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cw = Math.round(wrap.clientWidth * dpr), ch = Math.round(wrap.clientHeight * dpr);
+    if (!cw || !ch) return;
+    if (preview.width !== cw || preview.height !== ch) { preview.width = cw; preview.height = ch; }
+    // wie object-fit: cover
+    const scale = Math.max(cw / vw, ch / vh);
+    const sw = cw / scale, sh = ch / scale;
+    preview.getContext('2d').drawImage(video, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, cw, ch);
+  }
+
+  function updateStatus() {
+    const b = scanner?.lastBrightness();
+    status.textContent = [stage, scanner ? scanner.cameraInfo(video) : '', b == null ? '' : `Helligkeit ${b}`].filter(Boolean).join(' · ');
+  }
 
   const restartButton = () => h('button', { class: 'btn', style: { marginTop: '8px' }, onclick: (e) => { e.stopPropagation(); startCamera(true); } }, 'Kamera neu starten');
 
@@ -51,7 +80,7 @@ export function openScanner(ctx) {
     msg.replaceChildren(
       h('div', null, 'Kein Kamerabild? Neu starten – oder „Foto aufnehmen“ verwenden.'),
       restartButton(),
-      h('small', { class: 'diag' }, `Schritt: ${stage} · ${m ? m.cameraInfo(video) : 'Scanner nicht geladen'}`),
+      h('small', { class: 'diag' }, `Schritt: ${stage} · ${m ? m.cameraInfo(video) : 'Scanner nicht geladen'}${m?.lastBrightness() != null ? ` · Helligkeit ${m.lastBrightness()}` : ''}`),
     );
   }
 
@@ -70,6 +99,8 @@ export function openScanner(ctx) {
     let m = null;
     try {
       m = await loadScanner();
+      scanner = m;
+      m.resetBrightness();
       const stream = await m.getCameraStream({ fresh });
       if (token !== startToken) return;
       if (!screen.el.isConnected) return m.pauseCamera();
@@ -88,7 +119,8 @@ export function openScanner(ctx) {
         wrap.onclick = () => { wrap.onclick = null; video.play().catch(() => showProblem(m)); };
       });
       watchdog = setTimeout(() => {
-        if (token !== startToken || !screen.el.isConnected || hasPicture()) return;
+        const b = m.lastBrightness();
+        if (token !== startToken || !screen.el.isConnected || (hasPicture() && !(b != null && b < 3))) return;
         if (autoRetry) {
           console.warn('Kein Kamerabild – neuer Versuch mit frischem Stream');
           startCamera(true, false);
@@ -140,6 +172,8 @@ export function openScanner(ctx) {
       startToken++;
       stopLoop();
       clearTimeout(watchdog);
+      cancelAnimationFrame(rafId);
+      clearInterval(statusTimer);
       document.removeEventListener('visibilitychange', onVisibility);
       video.pause();
       scannerModule?.then((m) => m.pauseCamera());
@@ -152,7 +186,9 @@ export function openScanner(ctx) {
       video.playsInline = true;
       video.setAttribute('aria-label', 'Kamerabild');
       msg = h('div', { class: 'msg' });
-      wrap = h('div', { class: 'video-wrap' }, video, h('div', { class: 'frame' }), msg);
+      preview = h('canvas', { class: 'preview', 'aria-hidden': 'true' });
+      status = h('div', { class: 'scan-status', role: 'status' });
+      wrap = h('div', { class: 'video-wrap' }, video, preview, h('div', { class: 'frame' }), msg);
       const photo = h('input', { type: 'file', accept: 'image/*', capture: 'environment', 'aria-label': 'Foto aufnehmen' });
       photo.addEventListener('change', async () => {
         const file = photo.files?.[0];
@@ -168,9 +204,13 @@ export function openScanner(ctx) {
       body.append(wrap, h('div', { class: 'scanner-tools' },
         h('label', { class: 'btn' }, icon('camera'), 'Foto aufnehmen', photo),
         h('button', { class: 'btn', onclick: () => { screen.close(); openBarcodeInput(ctx); } }, icon('keyboard'), 'Nummer eingeben'),
+        status,
+        h('button', { class: 'btn-text restart', onclick: () => startCamera(true) }, 'Kamera neu starten'),
       ));
       document.addEventListener('visibilitychange', onVisibility);
       startCamera();
+      rafId = requestAnimationFrame(drawPreview); // erst nach openScreen, dann ist `screen` gesetzt
+      statusTimer = setInterval(updateStatus, 1000);
     },
   });
 }

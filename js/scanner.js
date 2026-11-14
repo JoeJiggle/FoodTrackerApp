@@ -84,8 +84,19 @@ export async function decodeVideoFrame(video) {
   canvas.height = Math.round(sh * scale);
   ctx2d.drawImage(video, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, canvas.width, canvas.height);
   const data = ctx2d.getImageData(0, 0, canvas.width, canvas.height);
+  brightness = measureBrightness(data.data);
   return bestCode(await readBarcodes(data, LIVE_OPTIONS));
 }
+
+// Mittlere Helligkeit (0–255) der zuletzt gelesenen Kamerabilder – zeigt, ob die Kamera nur schwarze Bilder liefert.
+let brightness = null;
+function measureBrightness(px) {
+  let sum = 0, n = 0;
+  for (let i = 0; i < px.length; i += 4 * 61) { sum += px[i] + px[i + 1] + px[i + 2]; n += 3; }
+  return n ? Math.round(sum / n) : null;
+}
+export const lastBrightness = () => brightness;
+export const resetBrightness = () => { brightness = null; };
 
 /** Erkennt einen Barcode in einem Foto (Datei aus der System-Kamera). */
 export async function decodeImageFile(file) {
