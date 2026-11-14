@@ -4,7 +4,7 @@ import { refreshView } from '../state.js';
 import { settings, setSetting, loadSettings } from '../settings.js';
 import * as db from '../db.js';
 import { fmtInput, todayISO } from '../format.js';
-import { parseDecimal } from '../nutrition.js';
+import { parseGoal } from '../nutrition.js';
 import { DATASETS, loadDataset } from '../datasets.js';
 import { APP_VERSION } from '../version.js';
 
@@ -24,7 +24,7 @@ function goalsCard(s) {
   const field = (key, label, unit) => {
     const input = decimalInput({ value: fmtInput(s.goals[key], 0), placeholder: 'kein Ziel' });
     input.addEventListener('change', async () => {
-      const v = parseDecimal(input.value);
+      const v = parseGoal(input.value);
       await setSetting('goals', { ...settings().goals, [key]: v > 0 ? v : null });
       input.value = fmtInput(settings().goals[key], 0);
       toast('Gespeichert');

@@ -91,14 +91,32 @@ export function recipePerPortion(ingredients, portions) {
   return out;
 }
 
+// Verglichen wird wie angezeigt: kcal ganzzahlig, Makros mit einer Nachkommastelle.
+// Sonst stünde „100,0 / 100 g“ da, obwohl intern 99,96 g nicht reichen.
+const roundAsShown = (k, v) => (k === 'kcal' ? Math.round(v) : Math.round(v * 10) / 10);
+
 /**
- * Tagesziel erreicht, wenn jedes gesetzte Ziel (kcal und ggf. Makros) erreicht oder überschritten ist.
- * keys: welche Ziele zählen. Ergebnis null, wenn keines davon gesetzt ist.
+ * Was zum Tagesziel noch fehlt: [{key, missing}] für jedes gesetzte, noch nicht erreichte Ziel.
+ * Leeres Array = alles erreicht oder überschritten; null = keines der Ziele (keys) gesetzt.
  */
-export function goalsMet(totals, goals, keys = ['kcal', 'protein', 'carbs', 'fat']) {
+export function goalGaps(totals, goals, keys = ['kcal', 'protein', 'carbs', 'fat']) {
   const set = keys.filter((k) => goals?.[k] > 0);
   if (!set.length) return null;
-  return set.every((k) => (totals?.[k] ?? 0) >= goals[k]);
+  return set
+    .map((k) => ({ key: k, missing: goals[k] - roundAsShown(k, totals?.[k] ?? 0) }))
+    .filter((g) => g.missing > 1e-9);
+}
+
+/** Tagesziel erreicht, wenn jedes gesetzte Ziel erreicht oder überschritten ist. null = kein Ziel gesetzt. */
+export function goalsMet(totals, goals, keys) {
+  const gaps = goalGaps(totals, goals, keys);
+  return gaps === null ? null : gaps.length === 0;
+}
+
+/** Zahl für Zielfelder: „2.000“ (Tausenderpunkt) = 2000, sonst wie parseDecimal. */
+export function parseGoal(input) {
+  const s = String(input ?? '').trim();
+  return /^\d{1,3}(\.\d{3})+$/.test(s) ? Number(s.replace(/\./g, '')) : parseDecimal(s);
 }
 
 // ---------- Barcodes ----------

@@ -3,7 +3,7 @@ import { h, icon, actionSheet, toast, confirmAction } from '../ui.js';
 import { state, refreshView } from '../state.js';
 import { settings, setSetting } from '../settings.js';
 import { fmtKcal, fmtMacro, fmtAmount, fmtDateLong, addDays, todayISO, parseISO } from '../format.js';
-import { goalsMet } from '../nutrition.js';
+import { goalsMet, goalGaps } from '../nutrition.js';
 import { MEALS, mealForNow, entriesForDate, entriesInRange, entryNutrients, totalsOf, copyMeal, deleteEntry, mealLabel } from '../log.js';
 import { getFood } from '../foods.js';
 import { openFoodDetail, openFoodPicker, openStoredList } from './add.js';
@@ -63,6 +63,19 @@ function progress(value, goal) {
   return h('div', { class: `bar ${(value ?? 0) > goal ? 'over' : ''}` }, h('i', { style: { width: `${pct}%` } }));
 }
 
+// Welche Ziele über „erreicht“ entscheiden: bei „Nur Kalorien“ nur das Kalorienziel.
+const goalKeysFor = (s) => (s.showMacros ? ['kcal', 'protein', 'carbs', 'fat'] : ['kcal']);
+const GOAL_LABELS = { protein: 'Eiweiß', carbs: 'Kohlenhydrate', fat: 'Fett' };
+
+/** Zeile unter der Tagessumme: Ziel erreicht, oder was noch fehlt. */
+function goalStatus(t, s) {
+  const gaps = goalGaps(t, s.goals, goalKeysFor(s));
+  if (gaps === null) return null;
+  if (!gaps.length) return h('p', { class: 'goal-status ok' }, icon('check'), 'Tagesziel erreicht');
+  const parts = gaps.map(({ key, missing }) => (key === 'kcal' ? `${fmtKcal(missing)} kcal` : `${GOAL_LABELS[key]} ${fmtMacro(missing)} g`));
+  return h('p', { class: 'goal-status' }, `Bis zum Tagesziel fehlen noch: ${parts.join(' · ')}`);
+}
+
 function summaryCard(t, s) {
   const g = s.goals;
   const kcalLine = g.kcal > 0
@@ -81,6 +94,7 @@ function summaryCard(t, s) {
       macro('c', 'Kohlenhydr.', t.carbs, g.carbs),
       macro('f', 'Fett', t.fat, g.fat),
     ),
+    goalStatus(t, s),
   );
 }
 
@@ -109,7 +123,7 @@ async function monthCard(s) {
   const today = todayISO();
   const thisMonth = today.slice(0, 7);
   // „Nur Kalorien“: dann zählt nur das Kalorienziel
-  const goalKeys = s.showMacros ? ['kcal', 'protein', 'carbs', 'fat'] : ['kcal'];
+  const goalKeys = goalKeysFor(s);
   const hasGoal = goalsMet({}, s.goals, goalKeys) !== null;
 
   const entries = await entriesInRange(`${calMonth}-01`, `${calMonth}-${pad(daysInMonth)}`);

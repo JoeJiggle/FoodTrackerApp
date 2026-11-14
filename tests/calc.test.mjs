@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   scaleNutrients, kjToKcal, kcalToKj, sodiumToSalt, recipePer100, recipePerPortion,
-  isValidBarcode, gtinCheckDigit, expandUpcE, pickDisplayName, per100FromOff, parseDecimal, productFromOff, goalsMet,
+  isValidBarcode, gtinCheckDigit, expandUpcE, pickDisplayName, per100FromOff, parseDecimal, productFromOff, goalsMet, goalGaps, parseGoal,
 } from '../js/nutrition.js';
 import { normalize, searchEntries } from '../js/text.js';
 
@@ -103,6 +103,24 @@ test('Tagesziel: erreicht oder mehr, alle gesetzten Ziele', () => {
   assert.equal(goalsMet({ kcal: 2100, protein: null }, goals), false, 'unbekannt zählt als nicht erreicht');
   assert.equal(goalsMet({ kcal: 2100, protein: 100 }, goals, ['kcal']), true, 'nur Kalorien');
   assert.equal(goalsMet({ kcal: 3000 }, { kcal: null }), null, 'kein Ziel gesetzt');
+});
+
+test('Tagesziel: Vergleich wie angezeigt (gerundet) und fehlende Mengen', () => {
+  const goals = { kcal: 2000, protein: 100 };
+  assert.equal(goalsMet({ kcal: 1999.6, protein: 99.96 }, goals), true, 'angezeigt 2.000 kcal / 100,0 g');
+  assert.equal(goalsMet({ kcal: 1999.4, protein: 120 }, goals), false, 'angezeigt 1.999 kcal');
+  assert.deepEqual(goalGaps({ kcal: 1850, protein: 82.5 }, goals), [{ key: 'kcal', missing: 150 }, { key: 'protein', missing: 17.5 }]);
+  assert.deepEqual(goalGaps({ kcal: 2100, protein: 100.04 }, goals), []);
+  assert.equal(goalGaps({}, { kcal: null }), null);
+});
+
+test('Zieleingabe mit Tausenderpunkt', () => {
+  assert.equal(parseGoal('2.000'), 2000);
+  assert.equal(parseGoal('12.500'), 12500);
+  assert.equal(parseGoal('2000'), 2000);
+  assert.equal(parseGoal('120,5'), 120.5);
+  assert.equal(parseGoal('1.5'), 1.5);
+  assert.equal(parseGoal(''), null);
 });
 
 test('Dezimalzahlen mit Komma oder Punkt', () => {

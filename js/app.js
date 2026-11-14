@@ -1,7 +1,8 @@
 // Einstiegspunkt: Navigation, Service Worker, Start.
 import { openDB } from './db.js';
 import { loadSettings, settings, setSetting } from './settings.js';
-import { setRerender } from './state.js';
+import { setRerender, state } from './state.js';
+import { todayISO } from './format.js';
 import { h } from './ui.js';
 import { renderToday, openAddMenu } from './views/today.js';
 import { renderHistory } from './views/history.js';
@@ -49,8 +50,29 @@ async function start() {
   window.addEventListener('hashchange', render);
   document.getElementById('fab').addEventListener('click', () => openAddMenu());
   await render();
+  watchDayChange();
   requestPersistence();
   registerServiceWorker();
+}
+
+/**
+ * iOS hält die App oft über Nacht im Hintergrund. Zeigte „Heute“ den alten Tag, beim Zurückkehren
+ * auf den neuen Tag wechseln – sonst würden neue Einträge beim Vortag landen.
+ */
+function watchDayChange() {
+  let lastToday = todayISO();
+  const check = () => {
+    const now = todayISO();
+    if (now === lastToday) return;
+    if (state.date === lastToday) {
+      state.date = now;
+      if ((location.hash.slice(1) || 'heute') === 'heute') render();
+    }
+    lastToday = now;
+  };
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check());
+  window.addEventListener('focus', check);
+  setInterval(check, 60 * 1000);
 }
 
 /** Bittet den Browser, die Daten nicht automatisch zu löschen (einmalig). */
