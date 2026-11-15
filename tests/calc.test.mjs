@@ -154,3 +154,44 @@ test('Suche: Teilwort, Umlaute, Relevanz und Nutzung', () => {
   assert.equal(searchEntries(entries, 'apfel', { usage: { c: 20 } })[0].key, 'c');
   assert.deepEqual(searchEntries(entries, '   '), []);
 });
+
+// ---------- Backup-Prüfung ----------
+import { validateBackup } from '../js/backup.js';
+import { safeImageUrl } from '../js/nutrition.js';
+
+const OPTS = { appIds: ['personalfoodtracker', 'futter'], schemaVersion: 1 };
+const entry = { id: 'a1', date: '2026-11-14', meal: 'lunch', name: 'Apfel', amount: 150, unit: 'g', per100: { kcal: 52, protein: 0.3, fat: null }, createdAt: '2026-11-14T12:00:00.000Z' };
+const backup = (data) => ({ app: 'personalfoodtracker', schemaVersion: 1, exportedAt: '2026-11-14T12:00:00.000Z', data });
+
+test('Backup-Prüfung: gültige Datei wird angenommen', () => {
+  const r = validateBackup(backup({ logEntries: [entry], weights: [{ date: '2026-11-14', kg: 72.5 }], settings: [{ key: 'goals', value: { kcal: 2000 } }] }), OPTS);
+  assert.equal(r.ok, true);
+  assert.equal(r.counts.logEntries, 1);
+  assert.deepEqual(r.data.recipes, []);
+});
+
+test('Backup-Prüfung: fremde, neuere oder beschädigte Dateien werden abgelehnt', () => {
+  assert.equal(validateBackup({ app: 'andere-app', data: {} }, OPTS).ok, false);
+  assert.equal(validateBackup(null, OPTS).ok, false);
+  assert.equal(validateBackup({ ...backup({}), schemaVersion: 2 }, OPTS).ok, false);
+  assert.equal(validateBackup(backup({ logEntries: 'kaputt' }), OPTS).ok, false);
+  assert.equal(validateBackup(backup({ logEntries: [{ ...entry, date: 'gestern' }] }), OPTS).ok, false);
+  assert.equal(validateBackup(backup({ logEntries: [{ ...entry, meal: 'mitternacht' }] }), OPTS).ok, false);
+  assert.equal(validateBackup(backup({ logEntries: [{ ...entry, id: '' }] }), OPTS).ok, false);
+  assert.equal(validateBackup(backup({ logEntries: [{ ...entry, name: 'x'.repeat(6000) }] }), OPTS).ok, false);
+  assert.equal(validateBackup(backup({ logEntries: [{ ...entry, per100: { kcal: '52' } }] }), OPTS).ok, false);
+  assert.equal(validateBackup(backup({ weights: [{ date: '2026-11-14', kg: 1e400 }] }), OPTS).ok, false);
+  const r = validateBackup(backup({ logEntries: [entry, { ...entry, id: 'a2', amount: -5 }] }), OPTS);
+  assert.equal(r.ok, false);
+  assert.match(r.error, /Eintrag 2/);
+});
+
+test('Backup-Prüfung: Bild-Adressen nur mit https', () => {
+  assert.equal(safeImageUrl('https://images.openfoodfacts.org/x.jpg'), 'https://images.openfoodfacts.org/x.jpg');
+  assert.equal(safeImageUrl('http://example.org/x.jpg'), '');
+  assert.equal(safeImageUrl('javascript:alert(1)'), '');
+  assert.equal(safeImageUrl(undefined), '');
+  const r = validateBackup(backup({ products: [{ code: '123', image: 'javascript:alert(1)', per100: {} }] }), OPTS);
+  assert.equal(r.ok, true);
+  assert.equal(r.data.products[0].image, '');
+});

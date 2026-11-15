@@ -25,6 +25,9 @@
   --safe-right: env(safe-area-inset-right, 0px);
 }
 
+/* Symbol-Vorrat in index.html (unsichtbar, nimmt keinen Platz ein) */
+.sprite { position: absolute; }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #121614;

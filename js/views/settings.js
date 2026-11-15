@@ -7,6 +7,7 @@ import { fmtInput, todayISO } from '../format.js';
 import { parseGoal } from '../nutrition.js';
 import { DATASETS, loadDataset } from '../datasets.js';
 import { APP_VERSION } from '../version.js';
+import { validateBackup, MAX_BACKUP_BYTES } from '../backup.js';
 
 export async function renderSettings(root) {
   const s = settings();
@@ -15,7 +16,7 @@ export async function renderSettings(root) {
     goalsCard(s),
     displayCard(s),
     await datasetsCard(s),
-    backupCard(s),
+    await backupCard(s),
     await resetCard(),
     await aboutCard(),
   );
@@ -98,18 +99,20 @@ export async function exportBackup() {
 }
 
 async function importBackup(file) {
+  if (file.size > MAX_BACKUP_BYTES) return toast('Die Datei ist zu groß für ein Backup dieser App.');
   let payload;
   try {
     payload = JSON.parse(await file.text());
   } catch {
     return toast('Die Datei ist kein gültiges Backup.');
   }
-  if (!BACKUP_IDS.includes(payload?.app) || !payload.data) return toast('Die Datei ist kein PersonalFoodTracker-Backup.');
-  if (payload.schemaVersion > db.SCHEMA_VERSION) return toast('Das Backup stammt aus einer neueren App-Version. Bitte zuerst die App aktualisieren.');
-  const n = payload.data.logEntries?.length ?? 0;
+  const result = validateBackup(payload, { appIds: BACKUP_IDS, schemaVersion: db.SCHEMA_VERSION });
+  if (!result.ok) return toast(`${result.error} Es wurde nichts verändert.`);
+  const n = result.counts.logEntries;
+  const when = new Date(payload.exportedAt);
   const mode = await ask({
     title: 'Backup einspielen?',
-    text: `Backup vom ${new Date(payload.exportedAt).toLocaleString('de-DE')} mit ${n} Einträgen. „Zusammenführen“ behält deine aktuellen Daten und ergänzt sie, „Ersetzen“ löscht zuerst alle Daten auf diesem Gerät.`,
+    text: `Backup${Number.isNaN(when.getTime()) ? '' : ` vom ${when.toLocaleString('de-DE')}`} mit ${n} Einträgen. „Zusammenführen“ behält deine aktuellen Daten und ergänzt sie, „Ersetzen“ löscht zuerst alle Daten auf diesem Gerät. Der jetzige Stand wird vorher automatisch gesichert.`,
     buttons: [
       { label: 'Zusammenführen', value: 'merge', primary: true },
       { label: 'Alles ersetzen', value: 'replace', danger: true },
@@ -117,13 +120,31 @@ async function importBackup(file) {
     ],
   });
   if (!mode) return;
-  await db.importAll(payload.data, mode);
+  await db.saveSafetyCopy();
+  await db.importAll(result.data, mode);
   await loadSettings();
   toast('Backup eingespielt');
   refreshView();
 }
 
-function backupCard(s) {
+async function restoreBeforeImport(copy) {
+  const ok = await ask({
+    title: 'Stand vor dem Import wiederherstellen?',
+    text: `Alle jetzigen Daten werden durch den Stand vom ${new Date(copy.createdAt).toLocaleString('de-DE')} ersetzt.`,
+    buttons: [
+      { label: 'Wiederherstellen', value: true, danger: true },
+      { label: 'Abbrechen', value: null },
+    ],
+  });
+  if (!ok) return;
+  await db.restoreSafetyCopy();
+  await loadSettings();
+  toast('Früherer Stand wiederhergestellt');
+  refreshView();
+}
+
+async function backupCard(s) {
+  const safety = await db.getSafetyCopy();
   const fileInput = h('input', { type: 'file', accept: 'application/json,.json', hidden: true });
   fileInput.addEventListener('change', () => { const f = fileInput.files?.[0]; fileInput.value = ''; if (f) importBackup(f); });
   const last = s.lastBackup ? new Date(s.lastBackup) : null;
@@ -136,6 +157,8 @@ function backupCard(s) {
     h('div', { class: 'stack' },
       h('button', { class: 'btn primary block', onclick: exportBackup }, 'Backup exportieren'),
       h('button', { class: 'btn block', onclick: () => fileInput.click() }, 'Backup importieren'),
+      safety && h('button', { class: 'btn block', onclick: () => restoreBeforeImport(safety) },
+        `Stand vor dem Import wiederherstellen (${new Date(safety.createdAt).toLocaleDateString('de-DE')})`),
     ),
     fileInput,
   );

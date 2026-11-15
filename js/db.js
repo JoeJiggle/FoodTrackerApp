@@ -7,7 +7,7 @@
 
 // Interner Name aus der ersten Version – nicht ändern, sonst wären alle gespeicherten Daten weg.
 const DB_NAME = 'futter';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 export const SCHEMA_VERSION = 1;
 
 export const STORES = ['products', 'customFoods', 'recipes', 'logEntries', 'foodMeta', 'settings', 'templates', 'weights'];
@@ -30,6 +30,10 @@ function upgradeStructure(db, oldVersion) {
     db.createObjectStore('templates', { keyPath: 'id' });
     // Gewicht, ein Wert pro Tag, Schlüssel = Datum 'JJJJ-MM-TT'
     db.createObjectStore('weights', { keyPath: 'date' });
+  }
+  if (oldVersion < 3) {
+    // Automatische Sicherung des Datenstands vor dem Einspielen eines Backups (nicht Teil des Backups)
+    db.createObjectStore('safety', { keyPath: 'key' });
   }
 }
 
@@ -164,6 +168,23 @@ export async function importAll(data, mode) {
   if (backupVersion < SCHEMA_VERSION) tx.objectStore('settings').put({ key: 'schemaVersion', value: backupVersion });
   await done(tx);
   await migrate(db);
+}
+
+/** Sichert den aktuellen Datenstand intern, bevor ein Backup eingespielt wird. */
+export async function saveSafetyCopy() {
+  const data = await exportAll();
+  await put('safety', { key: 'beforeImport', createdAt: new Date().toISOString(), schemaVersion: SCHEMA_VERSION, data });
+}
+
+export const getSafetyCopy = () => get('safety', 'beforeImport');
+
+/** Stellt den Stand vor dem letzten Backup-Import wieder her und verwirft die Sicherung. */
+export async function restoreSafetyCopy() {
+  const copy = await getSafetyCopy();
+  if (!copy) return false;
+  await importAll(copy.data, 'replace');
+  await del('safety', 'beforeImport');
+  return true;
 }
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);

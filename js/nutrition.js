@@ -192,6 +192,9 @@ export function per100FromOff(n = {}) {
   };
 }
 
+/** Bild-Adresse nur übernehmen, wenn sie verschlüsselt (https) geladen wird – sonst leer. */
+export const safeImageUrl = (url) => (typeof url === 'string' && /^https:\/\/[^\s"'<>]+$/i.test(url) ? url : '');
+
 /** Wandelt ein Produkt aus der OFF-API in das lokale Format um. */
 export function productFromOff(p) {
   const orig = p.product_name || '';
@@ -215,6 +218,6 @@ export function productFromOff(p) {
     servingSize: p.serving_size || '',
     servingQuantity,
     nutriscore: /^[a-e]$/.test(p.nutriscore_grade || '') ? p.nutriscore_grade : '',
-    image: p.image_front_small_url || '',
+    image: safeImageUrl(p.image_front_small_url),
   };
 }

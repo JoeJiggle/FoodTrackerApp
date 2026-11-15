@@ -3,7 +3,7 @@ import { h, icon, openScreen, closeAllScreens, toast, decimalInput, confirmActio
 import { refreshView } from '../state.js';
 import { settings } from '../settings.js';
 import { fmtKcal, fmtMacro, fmtAmount, fmtInput, fmtDateLong } from '../format.js';
-import { NUTRIENT_LABELS, scaleNutrients, parseDecimal, kcalToKj } from '../nutrition.js';
+import { NUTRIENT_LABELS, scaleNutrients, parseDecimal, kcalToKj, safeImageUrl } from '../nutrition.js';
 import { MEALS, addEntry, updateEntry, deleteEntry } from '../log.js';
 import { SOURCE_LABEL, getMeta, setFavorite, saveServings, allServings, listFavorites, listRecent, fetchAndStoreProduct } from '../foods.js';
 import { buildSearchIndex } from '../search.js';
@@ -219,7 +219,7 @@ export function openFoodDetail(food, ctx = {}) {
 
 export function productHead(food) {
   return h('div', { class: 'product-head' },
-    food.image && h('img', { src: food.image, alt: '', loading: 'lazy', onerror: (e) => e.target.remove() }),
+    safeImageUrl(food.image) && h('img', { src: safeImageUrl(food.image), alt: '', loading: 'lazy', onerror: (e) => e.target.remove() }),
     h('div', { style: { flex: 1, minWidth: 0 } },
       h('h3', null, food.name),
       food.original && h('div', { class: 'orig' }, food.original),

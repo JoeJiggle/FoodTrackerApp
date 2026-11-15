@@ -85,7 +85,11 @@ Einstellungen als „nicht installiert“.
 
 - Reines HTML, CSS, JavaScript (ES-Module). Kein Framework, kein Build-Schritt – die Dateien im Repository sind die App.
 - Speicher: IndexedDB (`js/db.js`), Stores `products`, `customFoods`, `recipes`, `logEntries` (Index nach Datum),
-  `foodMeta` (Nutzung, Favoriten, eigene Portionen), `settings`. `schemaVersion` mit Migrationslogik.
+  `foodMeta` (Nutzung, Favoriten, eigene Portionen), `settings`, `templates`, `weights`. `schemaVersion` mit Migrationslogik.
+  Store `safety`: automatische Sicherung des Stands vor jedem Backup-Import (nicht Teil des Backups).
+- Sicherheit: Content Security Policy per Meta-Tag in `index.html` (GitHub Pages kann keine eigenen Header senden) –
+  nur eigene Skripte, Netzwerk nur zu Open Food Facts. Backup-Dateien werden vor dem Einspielen vollständig geprüft
+  (`js/backup.js`) und nur ganz oder gar nicht übernommen; Bild-Adressen nur mit `https:`.
 - Offline: Service Worker (`sw.js`), Cache-first für App-Dateien, Network-only für Open Food Facts.
 - Barcode-Erkennung: **zxing-wasm 3.1.6** (MIT, <https://github.com/Sec-ant/zxing-wasm>), nur der Reader-Teil,
   lokal in `vendor/zxing-wasm/`. npm wird nur benutzt, um diese Datei einmalig zu beziehen.

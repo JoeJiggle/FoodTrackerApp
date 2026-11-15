@@ -1,7 +1,7 @@
 // Service Worker: hält die App offline verfügbar.
 // Bei jeder Änderung an App-Dateien CACHE erhöhen (und APP_VERSION in js/version.js),
 // sonst bekommen installierte Apps das Update nicht.
-const CACHE = 'personalfoodtracker-1.4.2';
+const CACHE = 'personalfoodtracker-1.4.3';
 
 const APP_FILES = [
   './',
@@ -35,6 +35,7 @@ const APP_FILES = [
   'js/views/weight.js',
   'js/templates.js',
   'js/weight.js',
+  'js/backup.js',
   'vendor/zxing-wasm/es/reader/index.js',
   'vendor/zxing-wasm/es/share.js',
   'vendor/zxing-wasm/reader/zxing_reader.wasm',
